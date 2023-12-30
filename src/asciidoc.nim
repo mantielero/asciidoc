@@ -4,99 +4,8 @@ import npeg
 import asciidoc/[types]
 import asciidoc/docheader/[docheader]
 import asciidoc/lists/[lists]
-# import npeg, tables
-# import std/[strutils, strformat, options]
-# import synthesis
+import asciidoc/directives/[includes]
 
-#[
-La unidad principal es el bloque. Un documento es un tipo de bloque.
-]#
-
-#var level = 0 # To control the global level during parsing
-
-   
-#[ proc `$`(doc:seq[Table[string, string]]):string =
-  result = """
-=================  
-ASCIIDOC DOCUMENT
-=================
-
-""" 
-  for item in doc:
-    # 1. Document Header
-    if item[":type"] == "docheader":
-      result &= """
-Document Header
----------------
-"""
-      var title = item[":title"]
-      result &= &"  - title: {title}\n"
-      var level = item[":level"]
-      result &= &"  - level: {level}\n"
-      result &= &"  - authors:\n"
-      var n = -1
-      for k in item.keys():
-        if k.startsWith(":authorName"):
-          var tmp = (k.split(":authorName")[1]).parseInt
-          if tmp > n:
-            n = tmp
-      if n > -1:
-        for i in 0..n:
-          var author = item[&":authorName{i}"]
-          var email:string
-          if &":authorEmail{i}" in item:
-            email = item[&":authorEmail{i}"]          
-          result &= &"    {author} <{email}>\n"
-
-      result &=  "  - revision:\n"
-      var revNumber = item[":revNumber"]
-      var revDate   = item[":revDate"]      
-      var revRemark = item[":revRemark"] 
-      result &= &"""    - number: {revNumber}
-    - date: {revDate}
-    - remark: {revRemark}
-""" 
-      result &=  "  - metadata:\n"
-      for key in item.keys:
-        if not key.startsWith(":"):
-          result &=  &"    - {key}: {item[key]}\n"
-
-    # 2. Lists
-    elif item[":type"] == "list":           
-      result &= """
-
-List
-----
-""" 
-
-      var title = ""
-      if ":title" in item:
-        title = item[":title"]
-      result &= &"  - title: {title}\n"
-      result &= "  - attributes:\n"
-      var n = -1
-      for key in item.keys:
-        if key.startsWith(":attrib"):
-          var k = key.split(":")[2]
-          var value = item[key]
-          result &= &"    - {k}: {value}\n"
-      
-        if key.startsWith(":item"):
-          var tmp = key.split(":item")[1]
-          tmp = tmp.split(":")[0]
-          var tmpVal = tmp.parseInt
-          if tmpVal > n:
-            n = tmpVal
-
-      result &= "  - items:\n"
-      for i in 0..n:
-        var key = &":item{i}:"
-        for k in item.keys():
-          if k.startsWith(key):
-            var symbol = k.split(key)[1]
-            result &= &"    - {symbol}: {item[k]}\n"
- ]#
-#proc parseDocHeader()
 
 proc main =
   var txt = """
@@ -128,6 +37,8 @@ project's true power.
 // The next one split's the list
 //-
 * This is a new List
+
+include::attributes-settings.adoc[leveloffset=+1,lines="1..10,15..20",prueba=7;14..25;28..43,adios]
 """
   # 1. Parse Doc Header
   var
@@ -136,8 +47,9 @@ project's true power.
     
 
   var n = 0
+  var flag = true
   while txt.len > 0:
-    var flag = true
+    flag = true
     var item:Table[string, string]    
     var dh:DocumentHeaderObj
     var res = parserDocumentHeader.match(txt, dh)
@@ -161,10 +73,26 @@ project's true power.
       flag = false
       txt =  txt[res.matchMax .. txt.high]  
 
+    # 3. Parse includes
+    var incl:IncludeObj
+    res = parserIncludes.match(txt, incl)
+    if res.ok:
+      #echo list
+      adoc.includes &= incl
+      adoc.items &= (itIncludes, adoc.includes.high)      
+      flag = false
+      txt =  txt[res.matchMax .. txt.high]  
+
+
     if flag:
-      echo "BREAKING SINCE NOT IMPROVING"
       break
 
   echo adoc
+  
+  if flag:
+    echo "============================"
+    echo "BREAKING SINCE NOT IMPROVING"
+    echo "============================"
+    echo txt
 
 main()

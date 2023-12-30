@@ -1,12 +1,10 @@
 import npeg
+import ../types
 import std/[strutils, strformat, tables]
 
 # https://docs.asciidoctor.org/asciidoc/latest/directives/include/
 
-type
-  IncludeObj = object
-    target:string
-    attributes:OrderedTable[string,string]
+
 
 let parserIncludes* = peg("includes", incl: IncludeObj):
   crlf      <- ?'\r' * '\n'

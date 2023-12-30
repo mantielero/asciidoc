@@ -58,15 +58,32 @@ proc `$`*(v:ListObj):string =
     result &= &"      typ: {item.typ}\n"    
     result &= &"      txt: {item.txt}\n"   
 
+
+# Directives
+# - includes
+type
+  IncludeObj* = object
+    target*:string
+    attributes*:OrderedTable[string,string]
+
+proc `$`*(incl:IncludeObj):string =
+  result = "Include:\n"
+  result &= &"  - target: {incl.target}\n"
+  result &= &"  - attributes:\n"
+  for (key,value) in incl.attributes.pairs():
+    result &= &"    - {key}: {value}\n"
+
 # ADoc
 type
   ItemType* = enum
     itDocHeader
     itList
+    itIncludes
   Adoc* = object
     items*:seq[tuple[kind:ItemType, n:int]]
     docheader*:seq[DocumentHeaderObj]
     lists*:seq[ListObj]
+    includes*:seq[IncludeObj]
 
 proc `$`*(doc:Adoc):string =
   for item in doc.items:
@@ -74,5 +91,7 @@ proc `$`*(doc:Adoc):string =
       result &= $doc.docheader[item.n] & "\n"
     elif item.kind == itList:
       result &= $doc.lists[item.n] & "\n" 
+    elif item.kind == itIncludes:
+      result &= $doc.includes[item.n] & "\n" 
 
   
