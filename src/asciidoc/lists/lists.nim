@@ -15,18 +15,6 @@ let parserList* = peg("list", l: ListObj):
   # List Attributes
   # - named attribute
   namedAttribute    <- >adoc.key * '=' * >(adoc.value1 | adoc.value2) * ?',':
-    #item[":type"] = "list"
-
-    # var n = -1
-    # for key in item.keys:
-    #   if key.startsWith(":attrib"):
-    #     var tmp = key.split(":attrib")[1]
-    #     tmp = tmp.split(":",1)[0]
-    #     var tmpVal = tmp.parseInt
-    #     if tmpVal > n:
-    #       n = tmpVal
-    # n += 1
-
     var value = $2
     if value.startsWith('"') and value.endsWith('"'):
       value = value[1 ..< value.high] 
@@ -37,20 +25,7 @@ let parserList* = peg("list", l: ListObj):
 
   # - options 
   option            <- >+adoc.key * ?',': 
-    #item[":type"] = "list"
-
-    # var n = -1
-    # for key in item.keys:
-    #   if key.startsWith(":attrib"):
-    #     var tmp = key.split(":attrib")[1]
-    #     tmp = tmp.split(":",1)[0]
-    #     var tmpVal = tmp.parseInt
-    #     if tmpVal > n:
-    #       n = tmpVal
-    # n += 1
-    
     var key = $1
-    #var key = &":attrib{n}:{$attrib}"
     l.attrib[key] = ""
 
   attribute  <- namedAttribute | option
@@ -58,21 +33,6 @@ let parserList* = peg("list", l: ListObj):
   
   # List Items
   item      <- >+('*'|'-'|'.'|'#') * ' ' * >adoc.txt * adoc.crlf:   
-    #item[":type"] = "list"
-        
-    # var n = -1
-    # for key in item.keys:
-    #   if key.startsWith(":item"):
-    #     var tmp = key.split(":item")[1]
-    #     tmp = tmp.split(":",1)[0]
-    #     var tmpVal = tmp.parseInt
-    #     if tmpVal > n:
-    #       n = tmpVal
-    # n += 1
-    
-    #var symbol = $1
-    #var key = &":item{n}:{symbol}"
-    #var value = ($2).strip
     var it:ItemObj
     var symbol:string = $1
     if symbol[0] == '*' or symbol[0] == '-':
@@ -96,98 +56,3 @@ let parserList* = peg("list", l: ListObj):
     l.items &= it
 
   list <- ?title * ?attributes * +( (item|adoc.emptyLine|adoc.comment) * &!adoc.listSeparator)
-
-
-
-
-#[ when isMainModule:
-  var items:ItemsObj
-  var txt = """
-.Possible DefOps manual locations
-[square]
-* West wood maze
-// This is a comment
-** Maze heart
-
-[circle]
-*** Reflection pool
-** Secret exit
-* Untracked file in git repository
-// The next one split's the list
-//-
-* This is a new List
-"""
-  echo "--------------"
-  echo txt
-  echo "--------------"  
-  var res = parserItems.match(txt, items)
-
-  echo $items
-
-
-  # Case 2-------------- List separator
-
-  txt = """
-.Possible DefOps manual locations
-[square]
-* West wood maze
-// This is a comment
-- Maze heart
-
-//
-
-*** Reflection pool
-** Secret exit
-* Untracked file in git repository
-// The next one split's the list
-//-
-* This is a new List
-"""
-
-  items.title = none(string)
-  items.attrib = none(OrderedTable[string,string])  
-  items.orderedSymbols = @[]
-  items.unorderedSymbols = @[]  
-  items.items = @[]
-  echo "--------------"
-  echo txt
-  echo "--------------"  
-  res = parserItems.match(txt, items)
-
-  echo $items
-
-
-  # Case 2-------------- List separator
-
-  txt = """
-.Possible DefOps manual locations
-[square]
-. West wood maze
-// This is a comment
-.. Maze heart
-# Another test
-* test1
-** trest 2
-
-//
-
-*** Reflection pool
-** Secret exit
-* Untracked file in git repository
-// The next one split's the list
-//-
-* This is a new List
-"""
-
-  items.title = none(string)
-  items.attrib = none(OrderedTable[string,string]) 
-  items.orderedSymbols = @[]
-  items.unorderedSymbols = @[]     
-  items.items = @[]
-  echo "--------------"
-  echo txt
-  echo "--------------"  
-  res = parserItems.match(txt, items)
-
-  echo $items
- ]#

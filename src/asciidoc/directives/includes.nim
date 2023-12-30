@@ -25,7 +25,7 @@ let parserIncludes* = peg("includes", incl: IncludeObj):
   includes  <- "include::" * >target * attributes * crlf:
     incl.target = $1
 
-proc main =
+when isMainModule:
   var incl:IncludeObj
   var txt = """
 include::attributes-settings.adoc[leveloffset=+1,lines="1..10,15..20",prueba=7;14..25;28..43,adios]
@@ -37,5 +37,5 @@ include::attributes-settings.adoc[leveloffset=+1,lines="1..10,15..20",prueba=7;1
 
   echo $incl
 
-main()
+#main()
 

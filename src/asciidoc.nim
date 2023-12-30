@@ -5,7 +5,7 @@ import asciidoc/[types]
 import asciidoc/docheader/[docheader]
 import asciidoc/lists/[lists]
 import asciidoc/directives/[includes]
-
+import asciidoc/sections/[sections]
 
 proc main =
   var txt = """
@@ -39,11 +39,17 @@ project's true power.
 * This is a new List
 
 include::attributes-settings.adoc[leveloffset=+1,lines="1..10,15..20",prueba=7;14..25;28..43,adios]
+
+[#tigers-subspecies,reftext=Subspecies]
+== Section Level 1
+
+This is a paragraph.
+
 """
   # 1. Parse Doc Header
   var
     adoc:ADoc
-    doc:seq[Table[string,string]]
+    #doc:seq[Table[string,string]]
     
 
   var n = 0
@@ -83,11 +89,21 @@ include::attributes-settings.adoc[leveloffset=+1,lines="1..10,15..20",prueba=7;1
       flag = false
       txt =  txt[res.matchMax .. txt.high]  
 
+    # 4. Parse section
+    var sect:SectionObj
+    res = parserSection.match(txt, sect)
+    if res.ok:
+      #echo list
+      adoc.sections &= sect
+      adoc.items &= (itSection, adoc.includes.high)      
+      flag = false
+      txt =  txt[res.matchMax .. txt.high]  
 
     if flag:
       break
 
   echo adoc
+  echo adoc.items[adoc.items.high]
   
   if flag:
     echo "============================"
