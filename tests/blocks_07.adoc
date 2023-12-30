@@ -1,0 +1,17 @@
+# Prueba
+
+====
+Here are your options:
+
+.Red Pill
+[example%collapsible]
+======
+Escape into the real world.
+======
+
+.Blue Pill
+[%collapsible]
+======
+Live within the simulated reality without want or fear.
+======
+====

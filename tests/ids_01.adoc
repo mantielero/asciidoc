@@ -1,0 +1,3 @@
+[#goals.incremental]
+* Goal 1
+* Goal 2

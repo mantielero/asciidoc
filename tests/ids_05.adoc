@@ -1,0 +1,5 @@
+[%header%footer%autowidth]
+|===
+|Header A |Header B
+|Footer A |Footer B
+|===

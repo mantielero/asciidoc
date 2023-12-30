@@ -1,0 +1,3 @@
+include::filename.txt[tag=definition]
+
+include::filename.txt[lines=5..10]

@@ -1,0 +1,3 @@
+^super^script phrase
+
+~sub~script phrase

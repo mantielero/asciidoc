@@ -1,0 +1,1 @@
+link:\\server\share\whitepaper.pdf[Whitepaper]

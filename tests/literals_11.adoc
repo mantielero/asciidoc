@@ -1,0 +1,4 @@
+[source,ruby]
+----
+include::lib/app.rb[tag=main,indent=0]
+----

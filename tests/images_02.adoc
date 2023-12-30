@@ -1,0 +1,3 @@
+Click image:play.png[] to get the party started.
+
+Click image:pause.png[title="Pause"] when you need a break.

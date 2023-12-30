@@ -1,0 +1,6 @@
+:sourcedir: src/main/java
+
+[source,java]
+----
+include::{sourcedir}/org/asciidoctor/Asciidoctor.java[]
+----

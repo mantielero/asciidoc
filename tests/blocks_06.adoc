@@ -1,0 +1,10 @@
+:release-version: 2.4.3
+
+[source,xml,subs=attributes+]
+----
+<dependency>
+  <groupId>org.asciidoctor</groupId>
+  <artifactId>asciidoctorj</artifactId>
+  <version>{release-version}</version>
+</dependency>
+----
