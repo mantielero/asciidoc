@@ -89,6 +89,22 @@ proc `$`*(sect:SectionObj):string =
     result &= &"    - {key}:{value}\n"
 
 
+# Paragraph
+type
+  ParagraphObj* = object
+    lines*: seq[string]
+    attrib*:OrderedTable[string,string]    
+
+proc `$`*(sect:ParagraphObj):string =
+  result = "Paragraph:\n"
+  result &= "  - lines:\n"
+  for line in sect.lines:
+    result &= &"  - {line}\n"
+  result &= "  - attrib:\n"
+  for (key,value) in sect.attrib.pairs():
+    result &= &"    - {key}:{value}\n"
+
+
 # ADoc
 type
   ItemType* = enum
@@ -96,12 +112,15 @@ type
     itList
     itIncludes
     itSection
+    itParagraph
+
   Adoc* = object
     items*:seq[tuple[kind:ItemType, n:int]]
     docheader*:seq[DocumentHeaderObj]
     lists*:seq[ListObj]
     includes*:seq[IncludeObj]
     sections*:seq[SectionObj]
+    paragraphs*:seq[ParagraphObj]
 
 proc `$`*(doc:Adoc):string =
   for item in doc.items:
@@ -113,5 +132,6 @@ proc `$`*(doc:Adoc):string =
       result &= $doc.includes[item.n] & "\n" 
     elif item.kind == itSection:
       result &= $doc.sections[item.n] & "\n"       
-
+    elif item.kind == itParagraph:
+      result &= $doc.paragraphs[item.n] & "\n" 
   

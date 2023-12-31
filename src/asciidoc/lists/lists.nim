@@ -2,12 +2,17 @@ import npeg
 import ../types
 import ../grammar/[adocgrammar]
 import std/[strutils, strformat, tables, options]
-# TODO: el número no es el nivel del nesting, sino el cambio de símbolo.
+# TODO: description list
 # https://docs.asciidoctor.org/asciidoc/latest/lists/unordered/
 
   
-
 let parserList* = peg("list", l: ListObj):
+  crlf        <- ?'\r' * '\n' # 0 or 1 '\r'; then 1 '\n'
+  noSlash     <- &!'/'        # 1 not '/' but it doesn't consume any character
+  txt <- +(1 - '\r' - '\n')    
+  comment        <- "//" * noSlash * *txt * crlf
+  emptyLine   <- *' ' * crlf  # 0 or many spaces; then crlf  
+  emptyorcomment <- (emptyLine | comment)
   # List Title
   title     <- '.' * >adoc.txt * adoc.crlf:
     l.title = ($1).strip
@@ -20,7 +25,6 @@ let parserList* = peg("list", l: ListObj):
       value = value[1 ..< value.high] 
 
     var key = $1
-    #var key = &":attrib{n}:{attrib}"
     l.attrib[key] = value
 
   # - options 
@@ -55,4 +59,4 @@ let parserList* = peg("list", l: ListObj):
 
     l.items &= it
 
-  list <- ?title * ?attributes * +( (item|adoc.emptyLine|adoc.comment) * &!adoc.listSeparator)
+  list <- *emptyorcomment * ?title * ?attributes * +( (item|adoc.emptyLine|adoc.comment) * &!adoc.listSeparator)

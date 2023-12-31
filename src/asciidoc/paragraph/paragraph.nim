@@ -9,10 +9,13 @@ import std/[strutils, strformat, tables]
 
 
 
-let parserSection* = peg("section", sect: SectionObj):
+let parserParagraph* = peg("section", para: ParagraphObj):
   crlf        <- ?'\r' * '\n' # 0 or 1 '\r'; then 1 '\n'
   emptyLine   <- *' ' * crlf  # 0 or many spaces; then crlf
   noSlash     <- &!'/'        # 1 not '/' but it doesn't consume any character
+
+  comment        <- "//" * noSlash * *txt * crlf
+  emptyorcomment <- (emptyLine | comment)
 
   headerMark <- ('='|'#')[2..100] * ' '
 
@@ -21,9 +24,8 @@ let parserSection* = peg("section", sect: SectionObj):
   comment        <- "//" * noSlash * *txt * crlf
   emptyorcomment <- (emptyLine | comment)
   # Section
-  sectionTitle <- *emptyorcomment * >headerMark * >txt * crlf:
-    sect.level = ($1).len - 1
-    sect.txt = ($2).strip 
+  paragraph <- !('*'|'-'|'.'|'#'|'=') *  >txt * crlf:
+    para.lines &= ($1).strip
      
 
   # List Attributes
@@ -35,15 +37,15 @@ let parserSection* = peg("section", sect: SectionObj):
 
     var key = $1
     #var key = &":attrib{n}:{attrib}"
-    sect.attrib[key] = value
+    para.attrib[key] = value
 
   # - options 
   option            <- >+adoc.key * ?',': 
     var key = $1
-    sect.attrib[key] = ""
+    para.attrib[key] = ""
 
   attribute  <- namedAttribute | option
   attributes <- '[' * *attribute * ']' * adoc.crlf
 
 
-  section  <- adoc.emptyorcomment * *attributes * sectionTitle
+  section  <- *emptyorcomment * *attributes * +paragraph  

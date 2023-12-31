@@ -6,6 +6,7 @@ import asciidoc/docheader/[docheader]
 import asciidoc/lists/[lists]
 import asciidoc/directives/[includes]
 import asciidoc/sections/[sections]
+import asciidoc/paragraph/[paragraph]
 
 proc main =
   var txt = """
@@ -68,42 +69,59 @@ This is a paragraph.
       flag = false
       txt =  txt[res.matchMax .. txt.high]
 
-
+    echo "--------->", flag
     # 2. Parse list.
-    var list:ListObj
-    res = parserList.match(txt, list)
-    if res.ok:
-      #echo list
-      adoc.lists &= list
-      adoc.items &= (itList, adoc.lists.high)      
-      flag = false
-      txt =  txt[res.matchMax .. txt.high]  
+    if flag:
+      var list:ListObj
+      echo "----PARSING IN LIST----"
+      echo txt
+      echo "-----------------------"
+      res = parserList.match(txt, list)
+      if res.ok:
+        echo "OK"
+        adoc.lists &= list
+        adoc.items &= (itList, adoc.lists.high)      
+        flag = false
+        txt =  txt[res.matchMax .. txt.high]  
 
     # 3. Parse includes
-    var incl:IncludeObj
-    res = parserIncludes.match(txt, incl)
-    if res.ok:
-      #echo list
-      adoc.includes &= incl
-      adoc.items &= (itIncludes, adoc.includes.high)      
-      flag = false
-      txt =  txt[res.matchMax .. txt.high]  
+    if flag:
+      var incl:IncludeObj
+      res = parserIncludes.match(txt, incl)
+      if res.ok:
+        #echo list
+        adoc.includes &= incl
+        adoc.items &= (itIncludes, adoc.includes.high)      
+        flag = false
+        txt =  txt[res.matchMax .. txt.high]  
 
     # 4. Parse section
-    var sect:SectionObj
-    res = parserSection.match(txt, sect)
-    if res.ok:
-      #echo list
-      adoc.sections &= sect
-      adoc.items &= (itSection, adoc.includes.high)      
-      flag = false
-      txt =  txt[res.matchMax .. txt.high]  
+    if flag:
+      var sect:SectionObj
+      res = parserSection.match(txt, sect)
+      if res.ok:
+        adoc.sections &= sect
+        adoc.items &= (itSection, adoc.includes.high)      
+        flag = false
+        txt =  txt[res.matchMax .. txt.high]  
 
+
+    # 5. Paragraph
+    if flag:
+      var para:ParagraphObj
+      res = parserParagraph.match(txt, para)
+      if res.ok:
+        #echo list
+        adoc.paragraphs &= para
+        adoc.items &= (itParagraph, adoc.paragraphs.high)      
+        flag = false
+        txt =  txt[res.matchMax .. txt.high]  
+    
+    #echo "FLAG: ", flag
     if flag:
       break
-
   echo adoc
-  echo adoc.items[adoc.items.high]
+  #echo adoc.items[adoc.items.high]
   
   if flag:
     echo "============================"

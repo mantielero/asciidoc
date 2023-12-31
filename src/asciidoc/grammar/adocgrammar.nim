@@ -9,3 +9,10 @@ grammar "adoc":
   value2    <- '"' * +(1 - '"') * '"'
   txt       <- +(1 - '\r' - '\n')
   listSeparator <- (emptyLine * comment * emptyLine)  
+
+  #crlf        <- ?'\r' * '\n' # 0 or 1 '\r'; then 1 '\n'
+  #emptyLine   <- *' ' * crlf  # 0 or many spaces; then crlf
+  noSlash     <- &!'/'        # 1 not '/' but it doesn't consume any character
+
+  comment        <- "//" * noSlash * *txt * crlf
+  emptyorcomment <- (emptyLine | comment)
