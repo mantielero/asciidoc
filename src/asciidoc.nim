@@ -10,6 +10,8 @@ import asciidoc/paragraph/[paragraph]
 import asciidoc/breaks/[breaks]
 import asciidoc/preprocessor/[includes,variables]
 
+import asciidoc/exporters/html/[html]
+
 proc main =
   var txt = """
 //
@@ -156,7 +158,7 @@ RAM:: Temporarily stores information the CPU uses during operation.
 
     #echo "--------->", flag
     #var flag = true
-    
+
     # Parse variables
     res = parserAttributes.match(txt, variables)    
     if res.ok:
@@ -228,7 +230,7 @@ RAM:: Temporarily stores information the CPU uses during operation.
     #echo "FLAG: ", flag
     if flag:
       break
-  echo adoc
+  #echo adoc
   #echo adoc.items[adoc.items.high]
   
   if flag:
@@ -237,5 +239,8 @@ RAM:: Temporarily stores information the CPU uses during operation.
     echo "============================"
     echo txt
     echo "----------------------------"
+
+  # HTML Converter
+  echo  adoc.convertToHtml
 
 main()
