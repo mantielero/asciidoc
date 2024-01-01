@@ -48,15 +48,6 @@ proc header(h:DocumentHeaderObj):VNode =
         if h.revremark != "":
           span(id="revdate"):
             text h.revremark   
-#[
-  AuthorObj* = object
-    name*:string
-    email*:string          
-]#
-#[
-<span id="revnumber">version 2.0,</span>
-<span id="revdate">2019-03-22</span>
-]#
     
 
 proc paragraph(para:ParagraphObj):VNode =
@@ -73,6 +64,7 @@ proc paragraph(para:ParagraphObj):VNode =
 
 proc convertToHtml*(doc:ADoc):VNode =
   buildHtml(html):
+    var revnumber:string = "" 
     # ARTICLE (DEFAULT) - only one header
     body(class="article"):
 
@@ -81,6 +73,7 @@ proc convertToHtml*(doc:ADoc):VNode =
         var item = doc.items[i]
         if item.kind == itDocHeader:
           var tmp = header( doc.docheader[item.n] )
+          revnumber = doc.docheader[item.n].revnumber
           tmp
           break
         i += 1
@@ -103,9 +96,14 @@ proc convertToHtml*(doc:ADoc):VNode =
         # elif item.kind == itBreak:
         #   result &= $doc.breaks[item.n] & "\n"    
 
+      tdiv(id="footer"):
+        tdiv(id="footer-text"):
+          if revnumber != "":
+            text revnumber
+            br() 
+            text "Last updated 2024-01-01"  
 
 
-# echo page.render
 
 #[
 Admonition - Note
@@ -123,23 +121,3 @@ An admonition draws the reader&#8217;s attention to auxiliary information.
 </div>
 ]#
 
-#[
-
-<div id="content">
-<div class="paragraph">
-<p>This document provides&#8230;&#8203;</p>
-</div>
-<div class="paragraph">
-<p>Another paragraph</p>
-</div>
-</div>
-
-
-<div id="footer">
-<div id="footer-text">
-Version 2.0<br>
-Last updated 2024-01-01 17:56:41 +0100
-</div>
-</div>
-
-]#
