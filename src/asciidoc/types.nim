@@ -35,15 +35,18 @@ type
   ListItemType* = enum
     ordered
     unordered
+    listDescription
   ItemObj* = object
     level*:int
     typ*:ListItemType
+    term*:string
     txt*:seq[string]
 
   ListObj* = object
     title*:string
     unorderedSymbols*:seq[string]
     orderedSymbols*:seq[string]
+    listDescriptionSymbols*:seq[string]
     attrib*:OrderedTable[string,string]
     items*:seq[ItemObj]
 
@@ -52,10 +55,13 @@ proc `$`*(v:ListObj):string =
   result &= "  - attrib:\n"
   for (key,value) in v.attrib.pairs():
     result &= &"    - {key}: {value}\n"
-  result &= "  - items:\n"
+  result &= &"  - items: {v.items.len}\n"
+  
   for item in v.items:
     result &= &"    - level: {item.level}\n"
-    result &= &"      typ: {item.typ}\n"    
+    result &= &"      typ: {item.typ}\n"
+    if item.term != "":
+      result &= &"      term: {item.term}\n"
     result &= &"      txt: {item.txt}\n"   
 
 
@@ -63,8 +69,10 @@ proc `$`*(v:ListObj):string =
 # - includes
 type
   IncludeObj* = object
+    line*:string
     target*:string
     attributes*:OrderedTable[string,string]
+
 
 proc `$`*(incl:IncludeObj):string =
   result = "Include:\n"
@@ -99,11 +107,22 @@ proc `$`*(sect:ParagraphObj):string =
   result = "Paragraph:\n"
   result &= "  - lines:\n"
   for line in sect.lines:
-    result &= &"  - {line}\n"
+    result &= &"    - {line}\n"
   result &= "  - attrib:\n"
   for (key,value) in sect.attrib.pairs():
     result &= &"    - {key}:{value}\n"
 
+
+# Breaks
+type
+  BreakObj* = object
+    symbol*:string
+    isPageBreak*:bool = false
+
+proc `$`*(b:BreakObj):string =
+  result = "Break:\n"
+  result &= &"  - symbol: {b.symbol}\n"
+  result &= &"  - isPageBreak: {b.isPageBreak}\n"
 
 # ADoc
 type
@@ -113,6 +132,7 @@ type
     itIncludes
     itSection
     itParagraph
+    itBreak
 
   Adoc* = object
     items*:seq[tuple[kind:ItemType, n:int]]
@@ -121,6 +141,7 @@ type
     includes*:seq[IncludeObj]
     sections*:seq[SectionObj]
     paragraphs*:seq[ParagraphObj]
+    breaks*:seq[BreakObj]
 
 proc `$`*(doc:Adoc):string =
   for item in doc.items:
@@ -131,7 +152,8 @@ proc `$`*(doc:Adoc):string =
     elif item.kind == itIncludes:
       result &= $doc.includes[item.n] & "\n" 
     elif item.kind == itSection:
-      result &= $doc.sections[item.n] & "\n"       
+      result &= $doc.sections[item.n] & "\n"    
     elif item.kind == itParagraph:
       result &= $doc.paragraphs[item.n] & "\n" 
-  
+    elif item.kind == itBreak:
+      result &= $doc.breaks[item.n] & "\n"   

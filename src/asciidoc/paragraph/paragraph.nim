@@ -9,7 +9,7 @@ import std/[strutils, strformat, tables]
 
 
 
-let parserParagraph* = peg("section", para: ParagraphObj):
+let parserParagraph* = peg("paragraph", para: ParagraphObj):
   crlf        <- ?'\r' * '\n' # 0 or 1 '\r'; then 1 '\n'
   emptyLine   <- *' ' * crlf  # 0 or many spaces; then crlf
   noSlash     <- &!'/'        # 1 not '/' but it doesn't consume any character
@@ -48,4 +48,4 @@ let parserParagraph* = peg("section", para: ParagraphObj):
   attributes <- '[' * *attribute * ']' * adoc.crlf
 
 
-  section  <- *emptyorcomment * *attributes * +paragraph  
+  paragraph  <- *emptyorcomment * *attributes * +paragraph  

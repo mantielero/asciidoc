@@ -46,4 +46,4 @@ let parserSection* = peg("section", sect: SectionObj):
   attributes <- '[' * *attribute * ']' * adoc.crlf
 
 
-  section  <- adoc.emptyorcomment * *attributes * sectionTitle
+  section  <- +adoc.emptyorcomment * *attributes * sectionTitle

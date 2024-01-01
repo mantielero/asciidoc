@@ -8,7 +8,7 @@ import std/[strutils, strformat, tables]
 
 let parserIncludes* = peg("includes", incl: IncludeObj):
   crlf      <- ?'\r' * '\n'
-  target    <- +(1 - '[')
+  target    <- +(1 - '[' - '\r' - '\n')
   key       <- +(1 - '[' - ']' - ',' - '=')
   value1    <- +(1 - '[' - ']' - '=' - ',' - '"')
   value2    <- '"' * +(1 - '"') * '"' 
@@ -22,20 +22,11 @@ let parserIncludes* = peg("includes", incl: IncludeObj):
     incl.attributes[$1] = ""
   attribute <- namedAttribute | option
   attributes <- '[' * *attribute * ']'
-  includes  <- *adoc.emptyorcomment * "include::" * >target * attributes * crlf:
+  includes  <- !'\\' * "include::" * >target * attributes * crlf:
     incl.target = $1
+    incl.line   = $0
 
-# when isMainModule:
-#   var incl:IncludeObj
-#   var txt = """
-# include::attributes-settings.adoc[leveloffset=+1,lines="1..10,15..20",prueba=7;14..25;28..43,adios]
-# """
-#   echo "--------------"
-#   echo txt
-#   echo "--------------"  
-#   var res = parserIncludes.match(txt, incl)
+let parserSubs* = patt '{' * >+(1-'}') * '}'
 
-#   echo $incl
-
-
-
+#peg("substitution", target: string):
+  #substitution <- '{' * (1-'}') * '}'

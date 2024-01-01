@@ -3,6 +3,7 @@ import ../types
 import ../grammar/[adocgrammar]
 import std/[strutils, strformat, tables, options]
 # TODO: description list
+# https://docs.asciidoctor.org/asciidoc/latest/lists/description/
 # https://docs.asciidoctor.org/asciidoc/latest/lists/unordered/
 
   
@@ -36,7 +37,8 @@ let parserList* = peg("list", l: ListObj):
   attributes <- '[' * *attribute * ']' * adoc.crlf
   
   # List Items
-  item      <- >+('*'|'-'|'.'|'#') * ' ' * >adoc.txt * adoc.crlf:   
+  item      <- >+('*'|'-'|'.'|'#') * ' ' * >adoc.txt * adoc.crlf:
+    #echo "--OK--" 
     var it:ItemObj
     var symbol:string = $1
     if symbol[0] == '*' or symbol[0] == '-':
@@ -54,9 +56,30 @@ let parserList* = peg("list", l: ListObj):
         l.orderedSymbols &= symbol
         it.level = l.orderedSymbols.high     
       else:
-        it.level = l.orderedSymbols.find(symbol)        
+        it.level = l.orderedSymbols.find(symbol)      
+    #it.term = ""
     it.txt  &= $2
-
     l.items &= it
 
-  list <- *emptyorcomment * ?title * ?attributes * +( (item|adoc.emptyLine|adoc.comment) * &!adoc.listSeparator)
+  # List description
+  #avoidDirective <- +(1-':'-'\r'-'\n') * "::" * (1-'['-']'-'\r'-'\n') * '[' * (1-'['-']'-'\r'-'\n') * ']' * crlf
+  listDescription <- >+(1-':'-'\r'-'\n') * >("::"|":::"|"::::"|";;") * (" " * >+(1-'\r'-'\n')) * crlf:
+    var it:ItemObj
+    var symbol:string = $2
+    it.typ = listDescription
+    if not (symbol in l.listDescriptionSymbols):
+      l.listDescriptionSymbols &= symbol
+      it.level = l.listDescriptionSymbols.high
+    else:
+      it.level = l.listDescriptionSymbols.find(symbol)
+
+    it.term = $1
+
+    var tmp = if capture.len == 3:
+                ($3).strip()
+              else:
+                ""
+    it.txt &= tmp
+    l.items &= it
+
+  list <- *emptyorcomment * ?title * ?attributes * +((item|listDescription) * adoc.emptyorcomment[0..2]) * &!adoc.listSeparator
