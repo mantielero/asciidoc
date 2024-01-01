@@ -11,66 +11,11 @@ import asciidoc/breaks/[breaks]
 import asciidoc/preprocessor/[includes,variables]
 
 import asciidoc/exporters/html/[html]
+import karax / [vdom]
 
-proc main =
-  var txt = """
-//
-//Prueba 1
-   
-//prueba2
-= Document Title
-Author Name <author@email.org>; Jose Maria; Hello You <hello@example.org>
-v2.0, 2019-03-22: this is a remark
-:toc:
-:homepage: https://example.org
-:description: A story chronicling the inexplicable \
-hazards and unique challenges a team must vanquish \
-on their journey to finding an open source \
-project's true power.
+export html, vdom
 
-.Possible DefOps manual locations
-[square]
-* West wood maze
-// This is a comment
-- Maze heart
-
-//
-
-*** Reflection pool
-** Secret exit
-* Untracked file in git repository
-// The next one split's the list
-//-
-* This is a new List
-
-:includedir: _includes
-:sourcedir: ../src/main/java
-
-include::{includedir}/attributes-settings.adoc[leveloffset=+1,lines="1..10,15..20",prueba=7;14..25;28..43,adios]
-
-[#tigers-subspecies,reftext=Subspecies]
-== Section Level 1
-
-This is a paragraph.
-
-'''
-
-Another paragraph is
-here.
-
-<<<
-
-This was a page break
-with another paragraph.
-
-
-CPU:: The brain of the computer.
-Hard drive:: Permanent storage for operating system and/or user files.
-RAM:: Temporarily stores information the CPU uses during operation.
-
-
-"""
-
+proc parseAdoc*(txt:var string):ADoc =
   # PREPROCESSOR DIRECTIVES - include::target[...]
   # https://docs.asciidoctor.org/asciidoc/latest/directives/conditionals/
   # https://docs.asciidoctor.org/asciidoc/latest/directives/include/#include-processing
@@ -136,7 +81,6 @@ RAM:: Temporarily stores information the CPU uses during operation.
     adoc:ADoc
     #doc:seq[Table[string,string]]
     
-
 
   # After preprocessor
   var n = 0
@@ -230,6 +174,7 @@ RAM:: Temporarily stores information the CPU uses during operation.
     #echo "FLAG: ", flag
     if flag:
       break
+
   #echo adoc
   #echo adoc.items[adoc.items.high]
   
@@ -239,8 +184,14 @@ RAM:: Temporarily stores information the CPU uses during operation.
     echo "============================"
     echo txt
     echo "----------------------------"
+  
+  return adoc
 
-  # HTML Converter
-  echo  adoc.convertToHtml
+# when isMainModule:
 
-main()
+
+#   # HTML Converter
+#   var tmp = adoc.convertToHtml
+#   echo $tmp
+
+#main()

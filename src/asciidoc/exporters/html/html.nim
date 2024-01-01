@@ -19,8 +19,6 @@ import ../../types
 
 
 proc header(h:DocumentHeaderObj):VNode =
-  #var content:string
-
   buildHtml(tdiv(class = "header")):
     h1: text h.title
     if h.authors.len > 0 or h.revnumber != "" or h.revdate != "" or h.revremark != "":
@@ -47,7 +45,9 @@ proc header(h:DocumentHeaderObj):VNode =
         if h.revdate != "":
           span(id="revdate"):
             text h.revdate          
-
+        if h.revremark != "":
+          span(id="revdate"):
+            text h.revremark   
 #[
   AuthorObj* = object
     name*:string
@@ -71,29 +71,38 @@ proc paragraph(para:ParagraphObj):VNode =
 
 #echo admonition("note", "An admoniton draw the reader's attention to auxiliary information.")
 
-proc convertToHtml*(doc:ADoc):string =
-  var htmlDoc = buildHtml(html):
-    body(class="article"): # Default is article
-      for item in doc.items:
+proc convertToHtml*(doc:ADoc):VNode =
+  buildHtml(html):
+    # ARTICLE (DEFAULT) - only one header
+    body(class="article"):
+
+      var i = 0
+      while i != doc.items.high:
+        var item = doc.items[i]
         if item.kind == itDocHeader:
           var tmp = header( doc.docheader[item.n] )
           tmp
-        #   result &= $doc.docheader[item.n] & "\n"
-        # elif item.kind == itList:
-        #   result &= $doc.lists[item.n] & "\n" 
-        # elif item.kind == itIncludes:
-        #   result &= $doc.includes[item.n] & "\n" 
-        # elif item.kind == itSection:
-        #   result &= $doc.sections[item.n] & "\n"    
-        elif item.kind == itParagraph:
-          paragraph( doc.paragraphs[item.n] )
-          #echo tmp
-          
+          break
+        i += 1
+
+      tdiv(id="content"):
+        while i != doc.items.high:
+          var item = doc.items[i]
+
+          # elif item.kind == itList:
+          #   result &= $doc.lists[item.n] & "\n" 
+          # elif item.kind == itIncludes:
+          #   result &= $doc.includes[item.n] & "\n" 
+          # elif item.kind == itSection:
+          #   result &= $doc.sections[item.n] & "\n"    
+          if item.kind == itParagraph:
+            paragraph( doc.paragraphs[item.n] )
+            #echo tmp
+          i += 1
           #result &= $& "\n" 
         # elif item.kind == itBreak:
         #   result &= $doc.breaks[item.n] & "\n"    
 
-  echo htmlDoc
 
 
 # echo page.render
@@ -124,6 +133,8 @@ An admonition draws the reader&#8217;s attention to auxiliary information.
 <p>Another paragraph</p>
 </div>
 </div>
+
+
 <div id="footer">
 <div id="footer-text">
 Version 2.0<br>
