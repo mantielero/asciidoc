@@ -5,7 +5,7 @@ proc main() =
   var adocParsed = adocTxt.parseAdoc
   #echo adocParsed
   var adocHtml = adocParsed.convertToHtml
-  "ex01.html".writeFile( $adocHtml )
+  "ex01.html".writeFile( "<!DOCTYPE html>\n" & $adocHtml )
 
 
 #main

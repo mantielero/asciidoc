@@ -1,7 +1,7 @@
 #from htmlgen import nil
 import asciidoc
 import karax / [karaxdsl, vdom]
-import std/[strformat]
+import std/[strformat,tables, strutils]
 import ../../types
 import ../../stylesheet/[stylesheet]
 
@@ -142,17 +142,43 @@ proc convertToHtml*(doc:ADoc):VNode =
   #             text(CssDefault)
   # echo tmp
 
+  var description = ""
+  var author = ""
+  var title  = ""
+  for item in doc.items:
+    if item.kind == itDocHeader:
+      if "description" in doc.docheader[item.n].metadata:
+        description = doc.docheader[item.n].metadata["description"]
+        description = description.replace(" \\\n", " ")
+        for a in doc.docheader[item.n].authors:
+          author &= a.name
+          author &= ", "
+        if author.endsWith(", ") and author.len > 2:
+          author = author[0..(author.high - 2)]
+
+        title = doc.docheader[item.n].title
+      break
+
   buildHtml(html):
     head:
       meta(charset="UTF-8")
       meta(http-equiv="X-UA-Compatible", content="IE=edge")
       meta(name="viewport", content="width=device-width, initial-scale=1.0")
       meta(name="generator", content="Asciidoctor 2.0.17") # FIXME
+      if description != "":
+        meta(name="description", content = description)
+      if author != "":
+        meta(name="author", content = author)
+
       title:
-        text "Untitled"   # FIXME
+        if title == "":
+          text "Untitled"   # FIXME
+        else:
+          text title
       link(rel="stylesheet", href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700")
       style:
         verbatim(CssDefault)
+
 
     var revnumber:string = "" 
     # ARTICLE (DEFAULT) - only one header
@@ -221,11 +247,19 @@ An admonition draws the reader&#8217;s attention to auxiliary information.
 </div>
 ]#
 
+
+
 #[
-<head>
+TOC
 
-
-<style>
-...
-</head>
+    <div id="toc" class="toc">
+      <div id="toctitle">
+        Table of Contents
+      </div>
+      <ul class="sectlevel1">
+        <li>
+          <a href="#tigers-subspecies">Section Level 1</a>
+        </li>
+      </ul>
+    </div>
 ]#
