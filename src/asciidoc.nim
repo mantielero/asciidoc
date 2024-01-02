@@ -11,6 +11,7 @@ import asciidoc/breaks/[breaks]
 import asciidoc/preprocessor/[includes,variables]
 
 import asciidoc/exporters/html/[html]
+export types
 import karax / [vdom]
 
 export html, vdom

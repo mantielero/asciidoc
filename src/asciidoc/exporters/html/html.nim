@@ -62,6 +62,113 @@ proc paragraph(para:ParagraphObj):VNode =
 
 #echo admonition("note", "An admoniton draw the reader's attention to auxiliary information.")
 
+# Define a function to traverse the VNode tree
+proc findLastUList(node: VNode, level: int = -1): VNode =
+  if node == nil:
+    return nil
+  # Your traversal logic here
+  # This is a simplified example, adapt it based on your actual VNode structure
+  var flag = true
+
+  var l = -1
+  var uList:seq[tuple[node:VNode;l:int]] = @[(node,l)]
+  var results:seq[VNode]
+  while uList.len > 0:
+    # Get the first item from the list
+    var (tmp, lvlValue) = uList[0]
+    uList.delete(0)
+
+    var firstFlag = true
+    for child in tmp:
+      if child.kind == VnodeKind.ul:
+        if firstFlag:
+          l += 1
+          firstFlag = false
+        if l == level:
+          results &= child
+      uList &= (child, l)  
+
+  if results.len == 0:
+    return nil
+  else:
+    return results[results.high]
+
+proc list(l:ListObj):VNode =
+  for item in l.items:
+
+    # Unordered case
+    if item.typ == unordered:
+      # Do we have an "ul" at the right level?
+      var latest = result.findLastUList(item.level)
+      # - if not, we create one one level below under the latest "li"
+      if latest == nil:
+        var myDiv = tree(VNodeKind.tdiv)
+        myDiv.class = "ulist"
+        var myLu = tree(VNodeKind.ul)
+        myDiv.add myLu
+        latest = myLu
+        if item.level == 0:
+          result = myDiv
+
+        else:
+          var levelBelow = result.findLastUList(item.level - 1)
+          # Now we find the latest "li"
+          var latestLi:VNode
+          for child in levelBelow:
+            if child.kind == VnodeKind.li:
+              latestLi = child
+          latestLi.add myDiv
+
+      # Add the "li"
+      var i = buildHtml(li()):
+                p:
+                  text item.txt[0]
+      #i.add p: text item.txt
+      latest.add i
+  echo result
+
+
+#[
+<div class="ulist">
+  <ul>
+    <li>
+      <p>List item</p>
+
+      <div class="ulist">
+        <ul>
+          <li>
+            <p>Nested list item</p>
+              <div class="ulist">
+                <ul>
+                  <li>
+                    <p>Deeper nested list item</p>
+                  </li>
+                /ul>
+              </div>
+          </li>
+        </ul>
+      </div>
+    </li>
+
+    <li>
+      <p>List item</p>
+<div class="ulist">
+<ul>
+<li>
+<p>Another nested list item</p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>List item</p>
+</li>
+</ul>
+</div>
+</div>
+]#
+
+
 proc convertToHtml*(doc:ADoc):VNode =
   buildHtml(html):
     var revnumber:string = "" 
@@ -82,13 +189,14 @@ proc convertToHtml*(doc:ADoc):VNode =
         while i != doc.items.high:
           var item = doc.items[i]
 
-          # elif item.kind == itList:
-          #   result &= $doc.lists[item.n] & "\n" 
+          if item.kind == itList:
+
+            list( doc.lists[item.n] ) 
           # elif item.kind == itIncludes:
           #   result &= $doc.includes[item.n] & "\n" 
           # elif item.kind == itSection:
           #   result &= $doc.sections[item.n] & "\n"    
-          if item.kind == itParagraph:
+          elif item.kind == itParagraph:
             paragraph( doc.paragraphs[item.n] )
             #echo tmp
           i += 1
@@ -103,6 +211,15 @@ proc convertToHtml*(doc:ADoc):VNode =
             br() 
             text "Last updated 2024-01-01"  
 
+
+
+
+
+      
+
+    #if item.term != "":
+    #  result &= &"      term: {item.term}\n"
+    #result &= &"      txt: {item.txt}\n"   
 
 
 #[
