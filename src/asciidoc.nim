@@ -11,10 +11,16 @@ import asciidoc/breaks/[breaks]
 import asciidoc/preprocessor/[includes,variables]
 
 import asciidoc/exporters/html/[html]
-export types
+#export types
 import karax / [vdom]
 
-export html, vdom
+#export types # Needed by 
+export vdom  # Needed by the example
+export html
+
+
+
+
 
 proc parseAdoc*(txt:var string):ADoc =
   # PREPROCESSOR DIRECTIVES - include::target[...]

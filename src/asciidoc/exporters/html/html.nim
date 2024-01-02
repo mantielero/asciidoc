@@ -1,7 +1,9 @@
 #from htmlgen import nil
+import asciidoc
 import karax / [karaxdsl, vdom]
 import std/[strformat]
 import ../../types
+import ../../stylesheet/[stylesheet]
 
 # proc admonition(typ,content:string):NimNode =
 #   var myClass = "admonitionblock " & typ
@@ -19,19 +21,26 @@ import ../../types
 
 
 proc header(h:DocumentHeaderObj):VNode =
-  buildHtml(tdiv(class = "header")):
+  buildHtml(tdiv(id = "header")):
     h1: text h.title
     if h.authors.len > 0 or h.revnumber != "" or h.revdate != "" or h.revremark != "":
       tdiv(class="details"):
         for i in 0..h.authors.high:
           var author = h.authors[i]
-          span(id="author",class="author"):
+          var id = "author"
+          if i > 0:
+            id &= $(i+1)
+
+          span(id=id,class="author"):
             text author.name
           if i < h.authors.high or (i == h.authors.high and author.email != ""):
             br()
           if author.email != "":# or i < h.authors.high:
             #br()
-            span(id="email", author="email"):
+            id = "email"
+            if i > 0:
+              id &= $(i+1)
+            span(id=id, class="email"):
               var email = &"mailto:{author.email}"
               a(href=email):
                 text author.email
@@ -41,12 +50,13 @@ proc header(h:DocumentHeaderObj):VNode =
             br()
         if h.revnumber != "":
           span(id="revnumber"):
-            text h.revnumber
+            text "Version " & h.revnumber & ","
         if h.revdate != "":
           span(id="revdate"):
-            text h.revdate          
+            text h.revdate
+          br()       
         if h.revremark != "":
-          span(id="revdate"):
+          span(id="revremark"):
             text h.revremark   
     
 
@@ -101,7 +111,7 @@ proc list(l:ListObj):VNode =
       # Do we have an "ul" at the right level?
       var latest = result.findLastUList(item.level)
       # - if not, we create one one level below under the latest "li"
-      if latest == nil:
+      if latest == nil: # If the list is empty, we create the root
         var myDiv = tree(VNodeKind.tdiv)
         myDiv.class = "ulist"
         var myLu = tree(VNodeKind.ul)
@@ -110,7 +120,7 @@ proc list(l:ListObj):VNode =
         if item.level == 0:
           result = myDiv
 
-        else:
+        else:  # If it is a sublevel, search for the latest "li" and add it there.
           var levelBelow = result.findLastUList(item.level - 1)
           # Now we find the latest "li"
           var latestLi:VNode
@@ -127,50 +137,23 @@ proc list(l:ListObj):VNode =
       latest.add i
   echo result
 
-
-#[
-<div class="ulist">
-  <ul>
-    <li>
-      <p>List item</p>
-
-      <div class="ulist">
-        <ul>
-          <li>
-            <p>Nested list item</p>
-              <div class="ulist">
-                <ul>
-                  <li>
-                    <p>Deeper nested list item</p>
-                  </li>
-                /ul>
-              </div>
-          </li>
-        </ul>
-      </div>
-    </li>
-
-    <li>
-      <p>List item</p>
-<div class="ulist">
-<ul>
-<li>
-<p>Another nested list item</p>
-</li>
-</ul>
-</div>
-</li>
-<li>
-<p>List item</p>
-</li>
-</ul>
-</div>
-</div>
-]#
-
-
 proc convertToHtml*(doc:ADoc):VNode =
+  # var tmp = buildHtml(style):
+  #             text(CssDefault)
+  # echo tmp
+
   buildHtml(html):
+    head:
+      meta(charset="UTF-8")
+      meta(http-equiv="X-UA-Compatible", content="IE=edge")
+      meta(name="viewport", content="width=device-width, initial-scale=1.0")
+      meta(name="generator", content="Asciidoctor 2.0.17") # FIXME
+      title:
+        text "Untitled"   # FIXME
+      link(rel="stylesheet", href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700")
+      style:
+        verbatim(CssDefault)
+
     var revnumber:string = "" 
     # ARTICLE (DEFAULT) - only one header
     body(class="article"):
@@ -238,3 +221,11 @@ An admonition draws the reader&#8217;s attention to auxiliary information.
 </div>
 ]#
 
+#[
+<head>
+
+
+<style>
+...
+</head>
+]#
