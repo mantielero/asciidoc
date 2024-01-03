@@ -68,8 +68,6 @@ proc paragraph(para:ParagraphObj):VNode =
   buildHtml(tdiv(class = "paragraph")):
     p: text content
 
-  #return paragraph(class="paragraph", content)
-
 #echo admonition("note", "An admoniton draw the reader's attention to auxiliary information.")
 
 # Define a function to traverse the VNode tree
@@ -137,6 +135,39 @@ proc list(l:ListObj):VNode =
       latest.add i
   echo result
 
+proc section2html(sect:SectionObj):tuple[node,content:VNode] =
+  var tmp = buildHtml(tdiv(class="sect" & $(sect.level-1))):
+              case sect.level
+              of 1:
+                h1()
+              of 2:
+                h2()
+              of 3:
+                h3()
+              of 4:
+                h4()
+              of 5:
+                h5()                                                                        
+              else:
+                h6()
+
+  # Set id
+  var id = ""
+  for key in sect.attrib.keys():
+    if key.startsWith("#"):
+      id = key[1..key.high]
+  #tmp[0].attrs &= &"""id="{id}""""
+  tmp[0].setAttr("id", id)
+
+  tmp[0].add buildHtml(text sect.txt)
+
+
+  var content = buildHtml(tdiv(class="sectionbody"))
+  tmp.add content
+  return (tmp,content)
+              
+
+
 proc convertToHtml*(doc:ADoc):VNode =
   # var tmp = buildHtml(style):
   #             text(CssDefault)
@@ -145,6 +176,7 @@ proc convertToHtml*(doc:ADoc):VNode =
   var description = ""
   var author = ""
   var title  = ""
+  var revNumber = ""
   for item in doc.items:
     if item.kind == itDocHeader:
       if "description" in doc.docheader[item.n].metadata:
@@ -158,8 +190,10 @@ proc convertToHtml*(doc:ADoc):VNode =
 
         title = doc.docheader[item.n].title
       break
-
-  buildHtml(html):
+  
+  var i = 0  # Tracks current item in the document.
+  result = buildHtml(html):
+    # ARTICLE (DEFAULT) - only one header
     head:
       meta(charset="UTF-8")
       meta(http-equiv="X-UA-Compatible", content="IE=edge")
@@ -172,54 +206,62 @@ proc convertToHtml*(doc:ADoc):VNode =
 
       title:
         if title == "":
-          text "Untitled"   # FIXME
+          text "Untitled"
         else:
           text title
       link(rel="stylesheet", href="https://fonts.googleapis.com/css?family=Open+Sans:300,300italic,400,400italic,600,600italic%7CNoto+Serif:400,400italic,700,700italic%7CDroid+Sans+Mono:400,700")
       style:
         verbatim(CssDefault)
 
+ 
+  # Body
+  var bodyContent = buildHtml(body(class="article")):
+                          while i != doc.items.high:
+                            var item = doc.items[i]
+                            if item.kind == itDocHeader:
+                              var tmp = header( doc.docheader[item.n] )
+                              revNumber = doc.docheader[item.n].revnumber
+                              tmp
+                              break
+                            i += 1
+  result.add bodyContent        # add the body to the HTML
+  var contents = @[bodyContent] # track the body
 
-    var revnumber:string = "" 
-    # ARTICLE (DEFAULT) - only one header
-    body(class="article"):
+  var articleContents = buildHtml(tdiv(id="content"))
+  bodyContent.add articleContents  # add it to the HTML
+  contents.add articleContents        # track it
+  var currentContent = articleContents    # set it as default content target
 
-      var i = 0
-      while i != doc.items.high:
-        var item = doc.items[i]
-        if item.kind == itDocHeader:
-          var tmp = header( doc.docheader[item.n] )
-          revnumber = doc.docheader[item.n].revnumber
-          tmp
-          break
-        i += 1
+  #var currentContent = contents[0]
+  #tdiv(id="content"):
+  while i != doc.items.high:
+    var item = doc.items[i]
 
-      tdiv(id="content"):
-        while i != doc.items.high:
-          var item = doc.items[i]
+    if item.kind == itList:
+      var tmp = list( doc.lists[item.n] )
+      currentContent.add tmp
 
-          if item.kind == itList:
+    elif item.kind == itSection:
+      var (node,content) = section2html( doc.sections[item.n] )
+      currentContent.add node
+      contents &= content
+      currentContent = content
 
-            list( doc.lists[item.n] ) 
-          # elif item.kind == itIncludes:
-          #   result &= $doc.includes[item.n] & "\n" 
-          # elif item.kind == itSection:
-          #   result &= $doc.sections[item.n] & "\n"    
-          elif item.kind == itParagraph:
-            paragraph( doc.paragraphs[item.n] )
-            #echo tmp
-          i += 1
-          #result &= $& "\n" 
-        # elif item.kind == itBreak:
-        #   result &= $doc.breaks[item.n] & "\n"    
+    elif item.kind == itParagraph:
+      var tmp = paragraph( doc.paragraphs[item.n] )
+      currentContent.add tmp
+    i += 1
+    #result &= $& "\n" 
+  # elif item.kind == itBreak:
+  #   result &= $doc.breaks[item.n] & "\n"    
 
-      tdiv(id="footer"):
-        tdiv(id="footer-text"):
-          if revnumber != "":
-            text revnumber
-            br() 
-            text "Last updated 2024-01-01"  
-
+  var footer  = buildHtml(tdiv(id="footer")):
+                  tdiv(id="footer-text"):
+                    if revNumber != "":
+                      text "Version " & revNumber
+                      br() 
+                      text "Last updated 2024-01-01\n"  
+  bodyContent.add footer
 
 
 
@@ -262,4 +304,21 @@ TOC
         </li>
       </ul>
     </div>
+]#
+
+
+
+
+#[
+    <div class="sect1">
+      <h2 id="tigers-subspecies">Section Level 1</h2>
+      <div class="sectionbody">
+]#
+
+#[
+      <div class="sectionbody">
+        <div class="ulist square">
+          <div class="title">
+            Possible DefOps manual locations
+          </div>
 ]#
