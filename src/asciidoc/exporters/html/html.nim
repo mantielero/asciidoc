@@ -1,6 +1,6 @@
 #from htmlgen import nil
 import asciidoc
-import karax / [karaxdsl, vdom]
+import karax / [karaxdsl, vdom, vstyles]
 import std/[strformat,tables, strutils]
 import ../../types
 import ../../stylesheet/[stylesheet]
@@ -166,7 +166,18 @@ proc section2html(sect:SectionObj):tuple[node,content:VNode] =
   tmp.add content
   return (tmp,content)
               
+proc break2html(b:BreakObj):VNode =
+  if b.isPageBreak:
+    buildHtml(tdiv(style="page-break-after: always;".toCss))
+  else:
+    buildHtml(hr())
+        #        <div style="page-break-after: always;"></div>
 
+      #[
+          BreakObj* = object
+    symbol*:string
+    isPageBreak*:bool = false
+      ]#  
 
 proc convertToHtml*(doc:ADoc):VNode =
   # var tmp = buildHtml(style):
@@ -246,6 +257,8 @@ proc convertToHtml*(doc:ADoc):VNode =
       currentContent.add node
       contents &= content
       currentContent = content
+    elif item.kind == itBreak:
+      currentContent.add break2html(doc.breaks[item.n])
 
     elif item.kind == itParagraph:
       var tmp = paragraph( doc.paragraphs[item.n] )
@@ -307,13 +320,6 @@ TOC
 ]#
 
 
-
-
-#[
-    <div class="sect1">
-      <h2 id="tigers-subspecies">Section Level 1</h2>
-      <div class="sectionbody">
-]#
 
 #[
       <div class="sectionbody">

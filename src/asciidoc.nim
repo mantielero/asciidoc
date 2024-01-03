@@ -131,14 +131,8 @@ proc parseAdoc*(txt:var string):ADoc =
     # 3. Parse list.
     if flag:
       var list:ListObj
-      #echo "----PARSING IN LIST----"
-      #echo txt
-      #echo "-----------------------"
       res = parserList.match(txt, list)
       if res.ok:
-        # echo ">>>>"
-        # echo list
-        # echo "<<<<"
         adoc.lists &= list
         adoc.items &= (itList, adoc.lists.high)      
         flag = false
@@ -182,8 +176,6 @@ proc parseAdoc*(txt:var string):ADoc =
     if flag:
       break
 
-  #echo adoc
-  #echo adoc.items[adoc.items.high]
   
   if flag:
     echo "============================"
@@ -193,12 +185,3 @@ proc parseAdoc*(txt:var string):ADoc =
     echo "----------------------------"
   
   return adoc
-
-# when isMainModule:
-
-
-#   # HTML Converter
-#   var tmp = adoc.convertToHtml
-#   echo $tmp
-
-#main()
