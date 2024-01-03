@@ -42,6 +42,14 @@ This is a paragraph.
 Another paragraph is
 here.
 
+
+. Level 1 list item
+.. Level 2 list item
+... Level 3 list item
+.... Level 4 list item
+..... Level 5 list item
+. Level 1 list item
+
 <<<
 
 This was a page break

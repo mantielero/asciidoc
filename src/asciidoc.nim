@@ -1,14 +1,14 @@
 # nim js -r -d:nodejs -d:release asciidoctor
-import std/[tables,strformat,strutils]
+import std/[tables, strformat, strutils, os]
 import npeg
 import asciidoc/[types]
-import asciidoc/docheader/[docheader]
-import asciidoc/lists/[lists]
+import asciidoc/parser/docheader/[docheader]
+import asciidoc/parser/lists/[lists]
 #import asciidoc/directives/[includes]
-import asciidoc/sections/[sections]
-import asciidoc/paragraph/[paragraph]
-import asciidoc/breaks/[breaks]
-import asciidoc/preprocessor/[includes,variables]
+import asciidoc/parser/sections/[sections]
+import asciidoc/parser/paragraph/[paragraph]
+import asciidoc/parser/breaks/[breaks]
+import asciidoc/parser/preprocessor/[includes,variables]
 
 import asciidoc/exporters/html/[html]
 #export types
@@ -22,11 +22,12 @@ export types # Needed for the tests
 
 
 
-proc parseAdoc*(txt:var string):ADoc =
+proc parseAdoc*(text:string; folder: string = ""):ADoc =
   # PREPROCESSOR DIRECTIVES - include::target[...]
   # https://docs.asciidoctor.org/asciidoc/latest/directives/conditionals/
   # https://docs.asciidoctor.org/asciidoc/latest/directives/include/#include-processing
   #var lines = txt.splitLines
+  var txt = text
   var backupTxt = txt
   var variables:Table[string,string]
   var includes:Table[string,string]
@@ -48,12 +49,14 @@ proc parseAdoc*(txt:var string):ADoc =
       flag = false
       txt =  txt[res.matchMax .. txt.high]
 
-      #echo incl.target
       var tmp = parserSubs.match(incl.target).captures
-      echo variables
+      #echo variables
       for i in tmp:
         incl.target = incl.target.replace("{" & i & "}", variables[i])
-      echo incl
+      
+      # Now we need to refer to the location where the original file is located
+      if folder != "":
+        incl.target = folder / incl.target
 
       # Try to read the file
       var fileTxt = ""
@@ -85,8 +88,6 @@ proc parseAdoc*(txt:var string):ADoc =
   # 1. Parse Doc Header
   var
     adoc:ADoc
-    #doc:seq[Table[string,string]]
-    
 
   # After preprocessor
   var n = 0

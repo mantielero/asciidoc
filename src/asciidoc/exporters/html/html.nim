@@ -3,7 +3,7 @@ import asciidoc
 import karax / [karaxdsl, vdom, vstyles]
 import std/[strformat,tables, strutils]
 import ../../types
-import ../../stylesheet/[stylesheet]
+import stylesheet/[stylesheet]
 import header, paragraph, list, breaks, sections
 # proc admonition(typ,content:string):NimNode =
 #   var myClass = "admonitionblock " & typ
