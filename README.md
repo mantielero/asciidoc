@@ -34,3 +34,94 @@ line 415 column 9 - Warning: <span> proprietary attribute "author"
 ```
 
 # TODO
+## Cli
+- [ ] CLI: not started
+
+## Parsing
+- [ ] Parsing
+  
+  - [ ] Document Header
+
+  - [ ] Paragraphs
+
+    - [ ] Hard line breaks
+    - [ ] Preamble and lead style
+    - [ ] Lead role
+    - [ ] Paragraph alignment
+
+ 
+  - [ ] Sections
+
+    - [ ] Document [preamble ](https://docs.asciidoctor.org/asciidoc/latest/sections/titles-and-levels/)
+    - [ ] Handle [`sectlinks` attribute](https://docs.asciidoctor.org/asciidoc/latest/sections/title-links/#link)
+    - [ ] [Auto-ids](https://docs.asciidoctor.org/asciidoc/latest/sections/auto-ids/)
+
+      - [ ] [`sectids` attribute](https://docs.asciidoctor.org/asciidoc/latest/sections/auto-ids/)
+      - [ ] [`idprefix` attribute](https://docs.asciidoctor.org/asciidoc/latest/sections/id-prefix-and-separator/)
+      - [ ] [`idseparator` attribute](https://docs.asciidoctor.org/asciidoc/latest/sections/id-prefix-and-separator/)
+      - [X] [Custom ids](https://docs.asciidoctor.org/asciidoc/latest/sections/custom-ids/)
+      - [ ] [Leagacy block anchor syntax](https://docs.asciidoctor.org/asciidoc/latest/sections/custom-ids/)
+      - [ ] [Auxiliary IDs](https://docs.asciidoctor.org/asciidoc/latest/sections/custom-ids/#assign-auxiliary-ids)
+      - [ ] [Section numbers](https://docs.asciidoctor.org/asciidoc/latest/sections/numbers/)
+      
+    - [ ] [Section styles](https://docs.asciidoctor.org/asciidoc/latest/sections/styles/)
+
+      - [ ] [Article](https://docs.asciidoctor.org/asciidoc/latest/sections/styles/#article-section-styles)
+      - [ ] [Book](https://docs.asciidoctor.org/asciidoc/latest/sections/styles/#book-section-styles)
+
+    - [ ] Handling [rules violation](https://docs.asciidoctor.org/asciidoc/latest/sections/titles-and-levels/)
+
+  - [ ] Discrete headings
+  - [X] Breaks
+  - [ ] Text formatting
+
+    - [ ] Bold
+    - [ ] Italic
+    - [ ] Monospace
+    - [ ] ...
+
+  - [-] Lists
+
+    - [-] Unordered
+    - [-] Ordered
+    - [-] Description
+    - [X] Separating lists
+    - [ ] Complex List Items
+
+  - [ ] Links
+  - [ ] Cross References
+  - [ ] Footnotes
+  - [ ] Images
+  - [ ] Audio and Video
+  - [ ] Icons
+  - [ ] Keyboard macro
+  - [ ] Button and Menu UI Macros
+  - [ ] Admonitions
+  - [ ] Sidebars
+  - [ ] Example blocks
+  - [ ] Blockquotes
+  - [ ] Verses
+  - [ ] Verbatim and Source Blocks
+  - [ ] Tables
+  - [ ] Equation and Formulas (STEM)
+  - [ ] Open Blocks
+  - [ ] Collapsible Blocks
+  - [ ] Comments
+  - [ ] Automatic Table of Contents
+  - [ ] Docinfo files
+  - [ ] Includes
+  - [ ] Conditionals
+  - [ ] Substitutions
+  - [ ] Passthroughs
+  - [ ] Reference
+  - [ ] Document Types
+
+    - [ ] article
+    - [ ] book
+    - [ ] manpage
+    - [ ] inline
+ 
+## Exporting
+- [ ] Exporting:
+### HTML
+  - [ ] HTML
