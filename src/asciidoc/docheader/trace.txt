@@ -1,0 +1,176 @@
+
+header <- *emptyorcomment * title * authors * revinfo * attributes * emptyLine
+   0: header         choice 29                 *emptyorcomment
+   1: emptyorcomment  choice 8                 choice(emptyLine, comment)
+   2: emptyLine        span                    *' '
+   3: crlf             chr '\r' 6              '\r'
+   4:                  jump 6                  
+   5:                  nop                     
+   6: crlf             chr '\n'                '\n'
+   7: emptyorcomment  commit 28                choice(emptyLine, comment)
+   8: comment         chr '/'                  "//"
+   9: comment         chr '/'                  "//"
+  10: noSlash         choice 20                &!'/'
+  11: noSlash          choice 18               &!'/'
+  12: noSlash           chr '/' 16             '/'
+  13:                   jump 15                
+  14:                   nop                    
+  15: noSlash           fail                   &!'/'
+  16: noSlash          commit 17               &!'/'
+  17: noSlash          fail                    &!'/'
+  18: noSlash         commit 19                &!'/'
+  19: noSlash         fail                     &!'/'
+  20: txt             set 24                   1 - '\r' - '\n'
+  21: comment         choice 24                *txt
+  22: txt              span                    +(1 - '\r' - '\n')
+  23: comment         commit 20                *txt
+  24: crlf            chr '\r' 27              '\r'
+  25:                 jump 27                  
+  26:                 nop                      
+  27: crlf            chr '\n'                 '\n'
+  28: header         commit 0                  *emptyorcomment
+  29: title          chr '='                   "= "
+  30: title          capopen ckAction(-1)      title
+  31: title           chr ' '                  "= "
+  32: txt             set                      1 - '\r' - '\n'
+  33: title           capopen ckVal(-1)        >txt
+  34: txt              span                    +(1 - '\r' - '\n')
+  35: title           capclose ckVal           >txt
+  36: crlf            chr '\r' 39              '\r'
+  37:                 jump 39                  
+  38:                 nop                      
+  39: crlf            chr '\n'                 '\n'
+  40: title          capclose ckAction         title
+  41: header         call 77                   authors
+  42: header         call 119                  revinfo
+  43: key            chr ':' 71                ':'
+  44: attributes     choice 71                 *attribute
+  45: attribute       capopen ckAction(-1)     attribute
+  46: attribute        capopen ckVal(-1)       >key
+  47: key               set                    1 - ':' - '\n' - '\r' - ' '
+  48: key               span                   +(1 - ':' - '\n' - '\r' - ' ')
+  49: key               chr ':'                ':'
+  50: attribute        capclose ckVal          >key
+  51: attribute        capopen ckVal           >(choice(crlf, value))
+  52: attribute         choice 58              choice(crlf, value)
+  53: crlf               chr '\r' 56           '\r'
+  54:                    jump 56               
+  55:                    nop                   
+  56: crlf               chr '\n'              '\n'
+  57: attribute         commit 68              choice(crlf, value)
+  58: crlfcont          set 66                 1 - ' '
+  59: value             choice 66              @crlfcont
+  60: crlfcont           set                   1 - '\\'
+  61: crlfcont           chr '\r' 64           '\r'
+  62:                    jump 64               
+  63:                    nop                   
+  64: crlfcont           chr '\n'              '\n'
+  65: value             commit 68              @crlfcont
+  66: value             any                    @crlfcont
+  67: value             jump 58                @crlfcont
+  68: attribute        capclose ckVal          >(choice(crlf, value))
+  69: attribute       capclose ckAction        attribute
+  70: attributes     commit 43                 *attribute
+  71: emptyLine      span                      *' '
+  72: crlf           chr '\r' 75               '\r'
+  73:                jump 75                   
+  74:                nop                       
+  75: crlf           chr '\n'                  '\n'
+  76: crlf           return                    
+
+authors <- +author * *(1 - '\r' - '\n') * crlf
+  77: authorName     set                       1 - '<' - ';' - '\r' - '\n'
+  78: author         capopen ckAction(-1)      author
+  79: author          capopen ckVal(-1)        >authorName
+  80: authorName       span                    +(1 - '<' - ';' - '\r' - '\n')
+  81: author          capclose ckVal           >authorName
+  82: authorEmail     chr '<' 90               '<'
+  83: author          choice 90                ?(>authorEmail)
+  84: author           capopen ckVal(-1)       >authorEmail
+  85: authorEmail       set                    1 - '<' - '>'
+  86: authorEmail       span                   +(1 - '<' - '>')
+  87: authorEmail       chr '>'                '>'
+  88: author           capclose ckVal          >authorEmail
+  89: author          commit 90                ?(>authorEmail)
+  90: author          chr ';' 93               ';'
+  91:                 jump 93                  
+  92:                 nop                      
+  93: author         capclose ckAction         author
+  94: authorName     set 113                   1 - '<' - ';' - '\r' - '\n'
+  95: authors        choice 113                +author
+  96: author          capopen ckAction(-1)     author
+  97: author           capopen ckVal(-1)       >authorName
+  98: authorName        span                   +(1 - '<' - ';' - '\r' - '\n')
+  99: author           capclose ckVal          >authorName
+ 100: authorEmail      chr '<' 108             '<'
+ 101: author           choice 108              ?(>authorEmail)
+ 102: author            capopen ckVal(-1)      >authorEmail
+ 103: authorEmail        set                   1 - '<' - '>'
+ 104: authorEmail        span                  +(1 - '<' - '>')
+ 105: authorEmail        chr '>'               '>'
+ 106: author            capclose ckVal         >authorEmail
+ 107: author           commit 108              ?(>authorEmail)
+ 108: author           chr ';' 111             ';'
+ 109:                  jump 111                
+ 110:                  nop                     
+ 111: author          capclose ckAction        author
+ 112: authors        commit 94                 +author
+ 113: authors        span                      *(1 - '\r' - '\n')
+ 114: crlf           chr '\r' 117              '\r'
+ 115:                jump 117                  
+ 116:                nop                       
+ 117: crlf           chr '\n'                  '\n'
+ 118: crlf           return                    
+
+revinfo <-
+    ?'v' * revnumber *
+    ?(',' * *Space * >revdate * ?(':' * *Space * >revremark)) *
+    crlf
+ 119: revinfo        chr 'v' 122               'v'
+ 120:                jump 122                  
+ 121:                nop                       
+ 122: Digit          set                       {'0' .. '9'}
+ 123: revnumber      capopen ckAction(-1)      revnumber
+ 124: revnumber       capopen ckVal(-1)        >(Digit * *(choice(Digit, '.')...
+ 125: revnumber        span                    *(choice(Digit, '.'))
+ 126: revnumber       capclose ckVal           >(Digit * *(choice(Digit, '.')...
+ 127: revnumber      capclose ckAction         revnumber
+ 128: revinfo        chr ',' 158               ','
+ 129: revinfo        choice 158                ?(',' * *Space * >revdate * ?(...
+ 130: revinfo         span                     *Space
+ 131: Digit           set                      {'0' .. '9'}
+ 132: revinfo         capopen ckVal(-1)        >revdate
+ 133: revdate          capopen ckAction(-1)    revdate
+ 134: revdate           capopen ckVal(-1)      >(+Digit * '-' * +Digit * '-' ...
+ 135: revdate            span                  +Digit
+ 136: revdate            chr '-'               '-'
+ 137: Digit              set                   {'0' .. '9'}
+ 138: revdate            span                  +Digit
+ 139: revdate            chr '-'               '-'
+ 140: Digit              set                   {'0' .. '9'}
+ 141: revdate            span                  +Digit
+ 142: revdate           capclose ckVal         >(+Digit * '-' * +Digit * '-' ...
+ 143: revdate          capclose ckAction       revdate
+ 144: revinfo         capclose ckVal           >revdate
+ 145: revinfo         chr ':' 157              ':'
+ 146: revinfo         choice 157               ?(':' * *Space * >revremark)
+ 147: revinfo          span                    *Space
+ 148: revremark        set                     1 - '\n' - '\r'
+ 149: revinfo          capopen ckVal(-1)       >revremark
+ 150: revremark         capopen ckAction(-1)   revremark
+ 151: revremark          capopen ckVal(-1)     >(+(1 - '\n' - '\r'))
+ 152: revremark           span                 +(1 - '\n' - '\r')
+ 153: revremark          capclose ckVal        >(+(1 - '\n' - '\r'))
+ 154: revremark         capclose ckAction      revremark
+ 155: revinfo          capclose ckVal          >revremark
+ 156: revinfo         commit 157               ?(':' * *Space * >revremark)
+ 157: revinfo        commit 158                ?(',' * *Space * >revdate * ?(...
+ 158: crlf           chr '\r' 161              '\r'
+ 159:                jump 161                  
+ 160:                nop                       
+ 161: crlf           chr '\n'                  '\n'
+ 162: crlf           return                    
+
+
+ 163:                fail                      
+
