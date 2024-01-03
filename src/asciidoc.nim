@@ -17,7 +17,7 @@ import karax / [vdom]
 #export types # Needed by 
 export vdom  # Needed by the example
 export html
-
+export types # Needed for the tests
 
 
 
@@ -75,7 +75,6 @@ proc parseAdoc*(txt:var string):ADoc =
       else:
         break
 
-  # =====
   txt = backupTxt
   for (line,value) in includes.pairs:
     txt = txt.replace(line, value)
