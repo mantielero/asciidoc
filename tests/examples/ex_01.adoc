@@ -60,3 +60,32 @@ CPU:: The brain of the computer.
 Hard drive:: Permanent storage for operating system and/or user files.
 RAM:: Temporarily stores information the CPU uses during operation.
 
+
+
+////
+This is a comment
+
+- This shouldn't be a list
+
+:source:
+
+* Whatever
+////
+
+.This is the title
+[#my-id.role1.role2%prueba,caption="Esto es una prueba"]
+========
+Here are your options:
+
+.Red Pill
+[example%collapsible]
+====
+First paragraph
+====
+
+.Blue Pill
+[%collapsible]
+====
+Second paragraph. Live within the simulated reality without want or fear.
+====
+========

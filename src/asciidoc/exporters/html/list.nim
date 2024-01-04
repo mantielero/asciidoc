@@ -33,7 +33,105 @@ proc findLastUList(node: VNode; level: int = -1; typ: VnodeKind = VnodeKind.ul):
   else:
     return results[results.high]
 
-proc list*(l:ListObj):VNode =
+proc list*(item:ListItemObj; attr:string = ""):VNode =
+    if item.typ == unordered:
+      var tmp = buildHtml(ul):
+                  li:
+                    p text item.txt
+      if attr != "":
+        tmp.setAttr(attr)
+      return tmp
+      # Do we have an "ul" at the right level?
+      #var latest = result.findLastUList(item.level)
+      # - if not, we create one one level below under the latest "li"
+      #if latest == nil: # If the list is empty, we create the root
+      #   var myDiv = tree(VNodeKind.tdiv)
+      #   myDiv.class = "ulist"
+      #   var myLu = tree(VNodeKind.ul)
+      #   myDiv.add myLu
+      #   latest = myLu
+      #   if item.level == 0:
+      #     result = myDiv
+
+      #   else:  # If it is a sublevel, search for the latest "li" and add it there.
+      #     var levelBelow = result.findLastUList(item.level - 1)
+      #     # Now we find the latest "li"
+      #     var latestLi:VNode
+      #     for child in levelBelow:
+      #       if child.kind == VnodeKind.li:
+      #         latestLi = child
+      #     latestLi.add myDiv
+
+      # # Add the "li"
+      # var i = buildHtml(li()):
+      #           p:
+      #             text item.txt# [0]
+      # #i.add p: text item.txt
+      # latest.add i
+
+    elif item.typ == ordered:
+      let levels:seq[tuple[class,typ:string]] = @[ 
+        ("arabic", ""),
+        ("loweralpha", "a"),
+        ("lowerroman", "i"),
+        ("upperalpha", "A"),
+        ("upperroman", "I")
+      ]
+
+      # Do we have an "ol" at the right level?
+      #var latest = result.findLastUList(item.level, VnodeKind.ol)
+      # - if not, we create one one level below under the latest "li"
+      #if latest == nil: # If the list is empty, we create the root
+      var tmp = tree(VNodeKind.ol)
+      tmp.setAttr("class", levels[item.listLevel].class)
+      if item.listLevel > 0:
+        tmp.setAttr("type", levels[item.listLevel].typ)
+
+      var tmp2  = buildHtml(li):
+                    p: 
+                      text item.txt
+      tmp.add tmp2
+      return tmp
+
+    elif item.typ == listDescription:
+      #[
+                    <dt class="hdlist1">CPU</dt>
+            <dd>
+              <p>The brain of the computer.</p>
+            </dd>
+      ]#
+      var tmp = buildHtml(dt(class="hdlist1")):
+                  text item.term
+      if item.txt != "":
+        var desc = buildHtml(dd):
+          p:
+            text item.txt
+        tmp.add desc
+      return tmp
+        #myDiv.add myLu
+        #latest = myLu
+
+        #if item.level == 0:
+        #  result = myDiv
+
+        #else:  # If it is a sublevel, search for the latest "li" and add it there.
+        #  var levelBelow = result.findLastUList(item.level - 1, VnodeKind.ol)
+          # Now we find the latest "li"
+          # var latestLi:VNode
+          # for child in levelBelow:
+          #   if child.kind == VnodeKind.li:
+          #     latestLi = child
+          # latestLi.add myDiv
+
+      # Add the "li"
+      #var i = buildHtml(li()):
+      #          p:
+      #            text item.txt# [0]
+      #i.add p: text item.txt
+      #latest.add i
+
+
+#[ proc list*(l:ListObj):VNode =
   for item in l.items:
     # Unordered case
     if item.typ == unordered:
@@ -105,3 +203,4 @@ proc list*(l:ListObj):VNode =
                   text item.txt[0]
       #i.add p: text item.txt
       latest.add i
+ ]#

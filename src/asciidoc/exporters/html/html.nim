@@ -4,7 +4,7 @@ import karax / [karaxdsl, vdom, vstyles]
 import std/[strformat,tables, strutils]
 import ../../types
 import stylesheet/[stylesheet]
-import header, paragraph, list, breaks, sections
+import header, paragraph, breaks, sections, list
 
 # proc admonition(typ,content:string):NimNode =
 #   var myClass = "admonitionblock " & typ
@@ -83,12 +83,30 @@ proc convertToHtml*(doc:ADoc):VNode =
   contents.add articleContents        # track it
   var currentContent = articleContents    # set it as default content target
 
+  var insertPoint:seq[VNode] = @[currentContent]
+  #echo currentContent
+  var listPreviousType:ListItemType 
   while i != doc.items.high:
     var item = doc.items[i]
 
-    if item.kind == itList:
-      var tmp = list( doc.lists[item.n] )
-      currentContent.add tmp
+    if item.kind == itListItem:
+      # TODO: add the attrib if neccesary
+      var listItem = doc.listItems[item.n]
+      var listItemVNode = list( listItem )
+
+      if listItem.typ == listPreviousType:
+        currentContent.add listItemVNode
+        #echo currentContent
+
+      var cls = case listItem.typ
+                of ordered: "olist"
+                of unordered: "ulist"
+                of listDescription: "dlist"
+
+      var previous = buildHtml(tdiv(class=cls))
+      previous.add listItemVNode
+
+      currentContent.add previous
 
     elif item.kind == itSection:
       var (node,content) = section2html( doc.sections[item.n] )
@@ -105,6 +123,7 @@ proc convertToHtml*(doc:ADoc):VNode =
     i += 1
    
 
+  
   var footer  = buildHtml(tdiv(id="footer")):
                   tdiv(id="footer-text"):
                     if revNumber != "":
@@ -114,7 +133,7 @@ proc convertToHtml*(doc:ADoc):VNode =
   bodyContent.add footer
 
 
-
+  #echo result
 
       
 

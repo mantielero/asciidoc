@@ -7,7 +7,7 @@ import std/[strutils, strformat, tables]
 
 
 
-let parserAttributes* = peg("attributes", v: Table[string,string]):
+let parserVariables* = peg("attributes", v: Table[string,string]):
   key       <- ':' * +(1 - ':' - '\n' - '\r' - ' ') * ": "
   crlfcont <- (1 - ' ') * (1 - '\\') * ?'\r' * '\n'
   value     <- @crlfcont#+lineCont * line  | line):  #lineCont #(line )| +lineCont * line ) 

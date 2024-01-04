@@ -16,3 +16,17 @@ grammar "adoc":
 
   comment        <- "//" * noSlash * *txt * crlf
   emptyorcomment <- (emptyLine | comment)
+
+  # Blocks delimiters
+  bdComment   <- "////" * *('/')
+  bdExample   <- "====" * *('=')
+  bdListing   <- "----" * *('-')   
+  bdLiteral   <- "...." * *('.')   
+  bdOpen      <- "--"
+  bdSidebar   <- "****" * *('*')   
+  bdTable1    <- "|===" * *('=') 
+  bdTable2    <- ",===" * *('=')  
+  bdTable3    <- ":===" * *('=')
+  bdTable4    <- "!===" * *('=')    
+  bdQuote     <- "____" * *('_') 
+  blockDelimiters <- (bdComment | bdExample | bdListing | bdLiteral | bdOpen | bdSidebar | bdTable1 | bdTable2 | bdTable3 | bdTable4 | bdQuote)

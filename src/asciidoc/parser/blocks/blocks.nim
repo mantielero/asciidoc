@@ -2,32 +2,37 @@ import npeg
 import std/[strutils, strformat, tables]
 import ../../types
 
-type
-  BlockType = enum
-    comment  # ////
-    example  # ====
-    listing  # ----
-    literal  # ....
-    open     # --
-    sidebar  # ****
-    table1   # |===
-    table2   # ,===     
-    table3   # :===    
-    table4   # !===    
-    pass     # ++++
-    quote    # ____
-  BlocksObj = object
-    title:string
-    id:string
-    roles:seq[string]
-    attributes:OrderedTable[string,string]
-    txt:string
-    typ:BlockType
-  
-  Blocks = ref BlocksObj
 
 
-let parserBlocks* = peg("blocks", blk: BlocksObj):
+let parserBlockDelimiter* = peg("blockDelimiter", blk: BlockDelimiterObj):
+  bdComment   <- adoc.bdComment:
+    blk.typ = comment
+  bdExample   <- adoc.bdExample:
+    blk.typ = example
+  bdListing   <- adoc.bdListing:
+    blk.typ = listing    
+  bdLiteral   <- adoc.bdLiteral:
+    blk.typ = literal    
+  bdOpen      <- adoc.bdOpen:
+    blk.typ = open    
+  bdSidebar   <- adoc.bdSidebar:
+    blk.typ = sidebar    
+  bdTable1    <- adoc.bdTable1:
+    blk.typ = table1    
+  bdTable2    <- adoc.bdTable2:
+    blk.typ = table2    
+  bdTable3    <- adoc.bdTable3:
+    blk.typ = table3  
+  bdTable4    <- adoc.bdTable4:
+    blk.typ = table3    
+  bdQuote     <- adoc.bdQuote:
+    blk.typ = quote   
+
+  blockDelimiter <- >adoc.blockDelimiters * adoc.crlf:
+    blk.symbol = $1
+
+
+#[ let parserBlocks* = peg("blocks", blk: BlocksObj):
   crlf      <- ?'\r' * '\n'
   bdComment   <- "////" * *('/'):
     blk.typ = comment
@@ -72,44 +77,5 @@ let parserBlocks* = peg("blocks", blk: BlocksObj):
   blockDelimiter <- (bdComment | bdExample | bdListing | bdLiteral | bdOpen | bdSidebar | bdTable1 | bdTable2 | bdTable3 | bdTable4 | bdQuote)
 
   blocks <- ?title * ?attributes * R("blockDelimiter", blockDelimiter  * crlf ) * >*(!R("blockDelimiter") * *(1 - '\r' - '\n') * crlf) * R("blockDelimiter"):
-    blk.txt = $1
+    blk.txt = $1 ]#
 
-
-# ====================
-
-proc main() =
-  var text = """
-.This is the title
-[#my-id.role1.role2%prueba,caption="Esto es una prueba"]
-========
-Here are your options:
-
-.Red Pill
-[example%collapsible]
-======
-Escape into the real world.
-======
-
-.Blue Pill
-[%collapsible]
-======
-Live within the simulated reality without want or fear.
-======
-========
-"""  
-  var
-    blocks,blk:BlocksObj
-    res = parserBlocks.match(text, blocks)
-  
-  echo "------------"
-  echo text
-  echo "------------"
-  echo blocks
-  # Sub blocks
-  
-  #res = parserBlocks.match(blocks.txt, blk)
-  #echo blk
-
-
-  
-main()
