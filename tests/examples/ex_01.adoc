@@ -15,16 +15,20 @@ project's true power.
 .Possible DefOps manual locations
 [square]
 * West wood maze
+* Same level as above's
 // This is a comment
 - Maze heart
 
 //
 
 *** Reflection pool
+*** Same level
 ** Secret exit
 * Untracked file in git repository
 // The next one split's the list
+//////
 //-
+
 * This is a new List
 
 :includedir: _includes
@@ -89,3 +93,5 @@ First paragraph
 Second paragraph. Live within the simulated reality without want or fear.
 ====
 ========
+
+//////

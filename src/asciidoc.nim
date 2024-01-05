@@ -110,24 +110,24 @@ proc parseAdoc*(text:string; folder: string = ""):ADoc =
   var blocks:seq[tuple[symbol:string;level:int]]   = @[]
   var isComment = false
   while txt.len > 0:
+    # ==== Not in a comment block ====
     if not isComment:
+      
       flag = true
+      # 1. Looking for Document Header
       var item:Table[string, string]    
       var dh:DocumentHeaderObj
       var res = parserDocumentHeader.match(txt, dh)
       #echo dh
       if res.ok:
-        #echo dh
         adoc.docheader &= dh
         adoc.items &= (itDocHeader, adoc.docheader.high)
-        #doc &= item
         flag = false
         txt =  txt[res.matchMax .. txt.high]
+        currentLevel += 1
 
-      #echo "--------->", flag
-      #var flag = true
 
-      # 1. Parse variables: this updates the table "variables"
+      # 2. Parse variables: this updates the table "variables"
       res = parserVariables.match(txt, variables)    
       if res.ok:
         flag = false
@@ -173,7 +173,7 @@ proc parseAdoc*(text:string; folder: string = ""):ADoc =
           #debug("TXT:" & txt)
           #debug("Found block delimiter:\n" & $blockDelimiter)
 
-      # 3. Parse list separator.
+      # 4. Parse list separator.
       if flag:
         res = parserListSeparator.match(txt)
         if res.ok:
@@ -184,10 +184,12 @@ proc parseAdoc*(text:string; folder: string = ""):ADoc =
           unorderedList   = @[]
           orderedList     = @[]
           descriptionList = @[]
+          debug("LIST SEPARATOR")
+          debug("blocklevels: " & $blockLevels)
           currentLevel = blockLevels[blockLevels.high]
-          blockLevels.delete(blockLevels.high)
+          #blockLevels.delete(blockLevels.high)
 
-      # 2. Parse list title
+      # 5. Parse list title
       if flag:
         var listTitle:ListTitleObj
         res = parserListTitle.match(txt, listTitle)
@@ -201,7 +203,7 @@ proc parseAdoc*(text:string; folder: string = ""):ADoc =
           flag = false
           txt =  txt[res.matchMax .. txt.high] 
 
-      # 3. Parse attributes.
+      # 6. Parse attributes.
       if flag:
         var attr:AttributesObj
         res = parserAttributes.match(txt, attr)
@@ -215,7 +217,7 @@ proc parseAdoc*(text:string; folder: string = ""):ADoc =
 
 
 
-      # 3. Parse list.        
+      # 7. Parse list.        
       if flag:
         var listItemTmp:ListItemTmpObj
         res = parserListItem.match(txt, listItemTmp)
@@ -241,16 +243,7 @@ proc parseAdoc*(text:string; folder: string = ""):ADoc =
           elif listItemTmp.symbol.contains(".") or listItemTmp.symbol.contains("#"):
             listItem.typ = ordered                    
           
-  #[
-      # if symbol[0] == '*' or symbol[0] == '-':
-      #   it.typ = unordered
-      #   if not (symbol in l.unorderedSymbols):
-      #     l.unorderedSymbols &= symbol
-      #     it.level = l.unorderedSymbols.high
 
-      #   else:
-      #     it.level = l.unorderedSymbols.find(symbol)
-  ]#
 
           adoc.listItems &= listItem
           adoc.items &= (itListItem, adoc.listItems.high)      
@@ -258,7 +251,7 @@ proc parseAdoc*(text:string; folder: string = ""):ADoc =
           txt =  txt[res.matchMax .. txt.high]  
 
 
-      # 4. Parse section
+      # 8. Parse section
       if flag:
         var sect:SectionObj
         res = parserSection.match(txt, sect)
@@ -269,7 +262,7 @@ proc parseAdoc*(text:string; folder: string = ""):ADoc =
           txt =  txt[res.matchMax .. txt.high]  
 
 
-      # 5. Break
+      # 9. Break
       if flag:
         var b:BreakObj
         res = parserBreak.match(txt, b)
@@ -279,7 +272,7 @@ proc parseAdoc*(text:string; folder: string = ""):ADoc =
           flag = false
           txt =  txt[res.matchMax .. txt.high]  
 
-      # 5. Paragraph
+      # 10. Paragraph
       if flag:
         var para:ParagraphObj
         res = parserParagraph.match(txt, para)
@@ -311,6 +304,7 @@ proc parseAdoc*(text:string; folder: string = ""):ADoc =
           #txt =  txt[res.matchMax .. txt.high]  
           txt =  txt[res.matchLen .. txt.high] 
 
+    # ==== In a comment block ====
     else: # It is a comment
       var res = parserCommentedLine.match(txt)
       if res.ok:
@@ -331,3 +325,14 @@ proc parseAdoc*(text:string; folder: string = ""):ADoc =
 """)
   
   return adoc
+
+
+#[
+LEVELS:
+- 0: <body class="article">
+- 1:    <div id="header">
+- 1:    <div id="content">
+          <div id="preamble">
+- 2:        <div class="sectionbody">
+- 2:      <div class="sect1">
+]#

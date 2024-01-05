@@ -44,6 +44,7 @@ type
     ordered
     unordered
     listDescription
+    none
   ListItemObj* = object
     level*:int
     listLevel*:int

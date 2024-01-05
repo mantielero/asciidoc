@@ -19,7 +19,7 @@ let parserDocumentHeader* = peg("header", item: DocumentHeaderObj):
 
   # Header
   title <- "= " * >txt * crlf:
-    item.level = 1
+    item.level = 0
     item.title = ($1).strip
 
   # Author
