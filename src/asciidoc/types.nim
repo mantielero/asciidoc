@@ -215,6 +215,10 @@ type
     document
     documentHeader
     paragraph
+    # blocks
+    source
+    stem
+    verse
     # Delimited
     comment  # ////
     example  # ====

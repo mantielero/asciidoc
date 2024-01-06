@@ -350,23 +350,27 @@ proc parserBlks(txt:string):Block =
   blkDoc.kind = document
   blkDoc.done = false
   var text = """
-# Prueba
+[quote,Abraham Lincoln,Address delivered at the dedication of the Cemetery at Gettysburg]
+____
+Four score and seven years ago our fathers brought forth
+on this continent a new nation...
+____
 
-====
-Here are your options:
+[quote,Albert Einstein]
+A person who never made a mistake never tried anything new.
 
-.Red Pill
-[example%collapsible]
-======
-Escape into the real world.
-======
+____
+This is another sentence.
+____
 
-.Blue Pill
-[%collapsible]
-======
-Live within the simulated reality without want or fear.
-======
-====
+[quote,Charles Lutwidge Dodgson,'Mathematician and author, also known as https://en.wikipedia.org/wiki/Lewis_Carroll[Lewis Carroll]']
+____
+If you don't know where you are going, any road will get you there.
+____
+
+"I hold it that a little rebellion now and then is a good thing,
+and as necessary in the political world as storms in the physical."
+-- Thomas Jefferson, Papers of Thomas Jefferson: Volume 11
 """
 
   var res = parserBlocks.match(text, blkDoc)

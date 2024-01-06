@@ -7,14 +7,17 @@ import ../../types
 proc parserBlocksGen():auto =
   var db:Block
   new(db)
+  db.done = false
 
   return  peg("blocks", blk: Block):
             # ---- Delimited Blocks ----: https://docs.asciidoctor.org/asciidoc/latest/blocks/delimited/
             # Title
             title     <- '.' * >adoc.txt * adoc.crlf:
               db.title = $1
-            attributes <- '[' * >*(1 - '[' - ']' - '\r' - '\n') * ']' * adoc.crlf:
-              db.attributes = $1
+            #attributes <- '[' * >*(1 - '[' - ']' - '\r' - '\n') * ']' * adoc.crlf:
+            attributes <- '[' * >@(']' * ?'\r' * '\n'): #*(1 - '[' - ']' - '\r' - '\n') * ']' * adoc.crlf:
+              db.attributes = $0
+              #echo "!!!!!", $1
             delimitedBlocks <- *adoc.emptyorcomment * ?title * ?attributes * >R("blockDelimiter", adoc.blockDelimiters  * adoc.crlf ) * >*(!R("blockDelimiter") * *(1 - '\r' - '\n') * adoc.crlf) * R("blockDelimiter"):
               db.content = $2
               db.done = false
@@ -56,6 +59,11 @@ proc parserBlocksGen():auto =
                 db.done = true
                 db.kind = quote 
               blk.blocks &= db.deepCopy
+              # Cleaning
+              db.title = ""
+              db.content = ""
+              db.done = false
+              db.attributes = ""              
 
             # ---- Doc Header ---
             titleDocHeader <- "= " * >adoc.txt * adoc.crlf:
@@ -66,15 +74,58 @@ proc parserBlocksGen():auto =
               db.done = true
               db.kind = documentHeader
               blk.blocks &= db.deepCopy
+              # Cleaning
+              db.title = ""
+              db.content = ""
+              db.done = false
+              db.attributes = ""              
 
             # ---- Paragraph ----
-            paragraph <- *adoc.emptyorcomment  * !adoc.blockDelimiters * >+(1 - adoc.crlf[2]):#>@adoc.emptyLine:
+            # ---- Paragraph Blocks ----
+            paraAttr   <- '[' * >*(1 - '[' - ']' - ',' - '%' - '=') * >*(1 - '[' - ']' - '\r' - '\n') * ']' * adoc.crlf:
+              var txt = $1
+              case txt: 
+              of "example":
+                db.kind = example
+              of "listing": 
+                db.kind = listing
+                db.done = true
+              of "literal": 
+                db.kind = literal
+                db.done = true
+              of "pass":    
+                db.kind = pass
+                db.done = true
+              of "quote":   
+                db.kind = quote
+              of "sidebar": 
+                db.kind = sidebar
+              of "source":  
+                db.kind = source
+              of "stem":    
+                db.kind = stem
+              of "verse":   
+                db.kind = verse 
+              else:
+                db.kind = paragraph
+              #if capture.len == 3 :
+              db.attributes = $0
+              #echo ">>>>>", $1   
+
+
+            paragraph <- *adoc.emptyorcomment  * !adoc.blockDelimiters * ?paraAttr * >+(1 - adoc.crlf[2]):#>@adoc.emptyLine:
               db.title = ""
               db.content = $1
-              db.kind = paragraph
+              if db.attributes == "":
+                db.kind = paragraph
+                
               db.done = true
               blk.blocks &= db.deepCopy
-
+             # Cleaning
+              db.title = ""
+              db.content = ""
+              db.done = false
+              db.attributes = ""
 
             blocks <- *(docheader | delimitedBlocks | paragraph)
 
