@@ -350,27 +350,19 @@ proc parserBlks(txt:string):Block =
   blkDoc.kind = document
   blkDoc.done = false
   var text = """
-[quote,Abraham Lincoln,Address delivered at the dedication of the Cemetery at Gettysburg]
-____
-Four score and seven years ago our fathers brought forth
-on this continent a new nation...
-____
+= Document Title (Level 0)
 
-[quote,Albert Einstein]
-A person who never made a mistake never tried anything new.
+== Level 1 Section Title
 
-____
-This is another sentence.
-____
+=== Level 2 Section Title
 
-[quote,Charles Lutwidge Dodgson,'Mathematician and author, also known as https://en.wikipedia.org/wiki/Lewis_Carroll[Lewis Carroll]']
-____
-If you don't know where you are going, any road will get you there.
-____
+==== Level 3 Section Title
 
-"I hold it that a little rebellion now and then is a good thing,
-and as necessary in the political world as storms in the physical."
--- Thomas Jefferson, Papers of Thomas Jefferson: Volume 11
+===== Level 4 Section Title
+
+====== Level 5 Section Title
+
+== Another Level 1 Section Title
 """
 
   var res = parserBlocks.match(text, blkDoc)

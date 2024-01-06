@@ -4,6 +4,7 @@ grammar "adoc":
   crlf      <- ?'\r' * '\n'
   comment   <- "//" * *(1-'\r'-'\n') * crlf
   emptyLine <- *' ' * crlf
+  headerMark <- ('='|'#')[2..10] * ' '  
   key       <- +(1 - '[' - ']' - ',' - '=' - '"')
   value1    <- +(1 - '[' - ']' - '=' - ',' - '"')
   value2    <- '"' * +(1 - '"') * '"'

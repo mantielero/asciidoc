@@ -14,10 +14,8 @@ proc parserBlocksGen():auto =
             # Title
             title     <- '.' * >adoc.txt * adoc.crlf:
               db.title = $1
-            #attributes <- '[' * >*(1 - '[' - ']' - '\r' - '\n') * ']' * adoc.crlf:
             attributes <- '[' * >@(']' * ?'\r' * '\n'): #*(1 - '[' - ']' - '\r' - '\n') * ']' * adoc.crlf:
               db.attributes = $0
-              #echo "!!!!!", $1
             delimitedBlocks <- *adoc.emptyorcomment * ?title * ?attributes * >R("blockDelimiter", adoc.blockDelimiters  * adoc.crlf ) * >*(!R("blockDelimiter") * *(1 - '\r' - '\n') * adoc.crlf) * R("blockDelimiter"):
               db.content = $2
               db.done = false
@@ -68,7 +66,7 @@ proc parserBlocksGen():auto =
             # ---- Doc Header ---
             titleDocHeader <- "= " * >adoc.txt * adoc.crlf:
               db.title = $1
-            docheader <- *adoc.emptyorcomment * titleDocHeader * >@adoc.crlf[2]:#adoc.emptyLine:
+            docheader <- *adoc.emptyorcomment * titleDocHeader * >*(1 - adoc.emptyLine):#adoc.crlf[2]):#>@adoc.crlf[2]:
               #echo $1
               db.content = $1
               db.done = true
@@ -129,13 +127,11 @@ proc parserBlocksGen():auto =
 
             # ---- cite blocks ---
             cite      <- '"' * >@('"' * ?'\r' * '\n'):
-              echo "OK"
               db.content = ($0)[1 .. (($0).high - 2)]
               if db.content[db.content.high] == '"':
                 db.content = db.content[0..<db.content.high]
               
             citeRef   <- "-- " * >+(1 - '\r' - '\n') * adoc.crlf:
-              echo "OK2"
               db.attributes = $1
               db.done = true
             citeBlock <-  *adoc.emptyorcomment * cite * citeRef:
@@ -147,10 +143,27 @@ proc parserBlocksGen():auto =
               db.done = false
               db.attributes = ""               
       
+            # ---- Sections ----
+            #sectionContent <- 
+            sectionTitle <- >adoc.headerMark * >adoc.txt * adoc.crlf:
+              db.title = $0#($2).strip
+              db.kind = section
+              #db.attrisect.level = ($1).len - 1
+              #sect.txt = ($2).strip 
 
+
+            section  <- +adoc.emptyorcomment * *attributes * sectionTitle:
+              blk.blocks &= db.deepCopy
+
+              # Cleaning
+              db.title = ""
+              db.content = ""
+              db.kind = quote
+              db.done = false
+              db.attributes = ""
 
             # ALL BLOCKS
-            blocks <- *(docheader | delimitedBlocks | citeBlock | paragraph)
+            blocks <- *(docheader | delimitedBlocks | citeBlock | section | paragraph)
 
 let parserBlocks* = parserBlocksGen()
 

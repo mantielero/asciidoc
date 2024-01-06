@@ -219,6 +219,7 @@ type
     source
     stem
     verse
+    section
     # Delimited
     comment  # ////
     example  # ====
