@@ -127,7 +127,30 @@ proc parserBlocksGen():auto =
               db.done = false
               db.attributes = ""
 
-            blocks <- *(docheader | delimitedBlocks | paragraph)
+            # ---- cite blocks ---
+            cite      <- '"' * >@('"' * ?'\r' * '\n'):
+              echo "OK"
+              db.content = ($0)[1 .. (($0).high - 2)]
+              if db.content[db.content.high] == '"':
+                db.content = db.content[0..<db.content.high]
+              
+            citeRef   <- "-- " * >+(1 - '\r' - '\n') * adoc.crlf:
+              echo "OK2"
+              db.attributes = $1
+              db.done = true
+            citeBlock <-  *adoc.emptyorcomment * cite * citeRef:
+              blk.blocks &= db.deepCopy
+              # Cleaning
+              db.title = ""
+              db.content = ""
+              db.kind = quote
+              db.done = false
+              db.attributes = ""               
+      
+
+
+            # ALL BLOCKS
+            blocks <- *(docheader | delimitedBlocks | citeBlock | paragraph)
 
 let parserBlocks* = parserBlocksGen()
 

@@ -331,7 +331,7 @@ proc pb(myBlock:Block) =
   if not myBlock.done:
     var b:Block = myBlock
     var res = parserBlocks.match( myBLock.content, b)
-    echo res
+    #echo res
     #for i in 0 .. myBlock.blocks.high:
     for b in myBlock.blocks:
       pb(b)
