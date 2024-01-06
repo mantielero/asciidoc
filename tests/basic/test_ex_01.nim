@@ -6,11 +6,12 @@ import asciidoc
 
 proc main() =
   var adocTxt = readFile("../examples/ex_01.adoc")
-  var adocParsed = parseAdoc(adocTxt, "../examples/")
-  echo adocParsed
-  echo "<<<<<<<<<<<--------------->>>>>>>>>>>>>>>>"
-  var adocHtml = adocParsed.convertToHtml
-  #var txt:string = $adocHtml
-  "ex01.html".writeFile( "<!DOCTYPE html>\n" & ($adocHtml).string )
+  parseAdoc(adocTxt, "../examples/")
+  # var adocParsed = parseAdoc(adocTxt, "../examples/")
+  # echo adocParsed
+  # echo "<<<<<<<<<<<--------------->>>>>>>>>>>>>>>>"
+  # var adocHtml = adocParsed.convertToHtml
+  # #var txt:string = $adocHtml
+  # "ex01.html".writeFile( "<!DOCTYPE html>\n" & ($adocHtml).string )
 
 main()

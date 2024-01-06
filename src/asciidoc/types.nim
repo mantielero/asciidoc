@@ -1,4 +1,4 @@
-import std/[tables,strformat, logging]
+import std/[tables,strformat, logging, strutils]
 import log
 
 
@@ -208,6 +208,61 @@ type
     paragraphs*:seq[ParagraphObj]
     breaks*:seq[BreakObj]
     blockDelimiters*:seq[BlockDelimiterObj]
+
+#----
+type
+  BlckType* = enum
+    document
+    documentHeader
+    paragraph
+    # Delimited
+    comment  # ////
+    example  # ====
+    listing  # ----
+    literal  # ....
+    open     # --
+    sidebar  # ****
+    table1   # |===
+    table2   # ,===     
+    table3   # :===    
+    table4   # !===    
+    pass     # ++++
+    quote    # ____
+    
+  Block* = ref object
+    blocks*:seq[Block]
+    title*:string
+    attributes*:string
+    content*:string
+    kind*: BlckType
+    done*: bool = false
+    #txt*:ref string
+
+
+proc getHeader(blk:Block; ident:int = 0):string =
+  var spa = ""
+  if ident > 0:
+    spa = " ".repeat(ident)
+  result = &"{spa}BLOCK [{blk.kind}]: {blk.title}\n"
+  result &= &"{spa}  - done: {blk.done}\n"  
+  result &= &"{spa}  - attributes: {blk.attributes}\n"
+  result &= &"{spa}  - content:\n"
+  for line in blk.content.splitLines:
+    result &= &"{spa}    |{line}|\n"
+
+  for b in blk.blocks:
+    result &= b.getHeader(ident + 2)
+
+
+
+proc `$`*(blk:Block):string =
+  result = blk.getHeader()
+  
+
+#----
+
+
+
 
 proc `$`*(doc:Adoc):string =
   #debug("types.nim > proc `$`*(doc:Adoc): start")

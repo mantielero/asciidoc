@@ -18,6 +18,7 @@ grammar "adoc":
   emptyorcomment <- (emptyLine | comment)
 
   # Blocks delimiters
+  bdPass      <- "++++" * *('+')
   bdComment   <- "////" * *('/')
   bdExample   <- "====" * *('=')
   bdListing   <- "----" * *('-')   
@@ -29,4 +30,4 @@ grammar "adoc":
   bdTable3    <- ":===" * *('=')
   bdTable4    <- "!===" * *('=')    
   bdQuote     <- "____" * *('_') 
-  blockDelimiters <- (bdComment | bdExample | bdListing | bdLiteral | bdOpen | bdSidebar | bdTable1 | bdTable2 | bdTable3 | bdTable4 | bdQuote)
+  blockDelimiters <- (bdPass | bdComment | bdExample | bdListing | bdLiteral | bdOpen | bdSidebar | bdTable1 | bdTable2 | bdTable3 | bdTable4 | bdQuote)

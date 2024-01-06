@@ -8,17 +8,17 @@ import ../../types
 import std/[strutils, strformat, tables]
 
 let parserDocumentHeader* = peg("header", item: DocumentHeaderObj):
-  crlf        <- ?'\r' * '\n' # 0 or 1 '\r'; then 1 '\n'
-  emptyLine   <- *' ' * crlf  # 0 or many spaces; then crlf
+  #crlf        <- ?'\r' * '\n' # 0 or 1 '\r'; then 1 '\n'
+  #emptyLine   <- *' ' * crlf  # 0 or many spaces; then crlf
   noSlash     <- &!'/'        # 1 not '/' but it doesn't consume any character
 
   txt <- +(1 - '\r' - '\n')
 
-  comment        <- "//" * noSlash * *txt * crlf
+  comment        <- "//" * noSlash * *txt * adoc.crlf
   emptyorcomment <- (emptyLine | comment)
 
   # Header
-  title <- "= " * >txt * crlf:
+  title <- "= " * >txt * adoc.crlf:
     item.level = 0
     item.title = ($1).strip
 
@@ -33,7 +33,7 @@ let parserDocumentHeader* = peg("header", item: DocumentHeaderObj):
     
     item.authors &= AuthorObj( name: name, email: email )
   
-  authors <- +author * *(1 - '\r' - '\n') * crlf
+  authors <- +author * *(1 - '\r' - '\n') * adoc.crlf
 
   # Revision https://docs.asciidoctor.org/asciidoc/latest/document/revision-information/
   revnumber <- >(Digit * *(Digit | '.')):
@@ -42,14 +42,14 @@ let parserDocumentHeader* = peg("header", item: DocumentHeaderObj):
     item.revDate   = ($1).strip
   revremark <- >(+(1 - '\n' - '\r')):
     item.revRemark = ($1).strip
-  revinfo <- ?'v' * revnumber * ?(',' * *Space * >revdate * ?(':' * *Space * >revremark)) * crlf
+  revinfo <- ?'v' * revnumber * ?(',' * *Space * >revdate * ?(':' * *Space * >revremark)) * adoc.crlf
 
     
   # Attributes https://docs.asciidoctor.org/asciidoc/latest/document/metadata/
   key       <- ':' * +(1 - ':' - '\n' - '\r' - ' ') * ':'
   crlfcont <- (1 - ' ') * (1 - '\\') * ?'\r' * '\n'
   value     <- @crlfcont
-  attribute <- >key * >(crlf | value): # a key with an optional value
+  attribute <- >key * >(adoc.crlf | value): # a key with an optional value
     var key = ($1)[1 ..< ($1).high]
     var value = if capture.len == 3:
                  ($2).strip()
@@ -59,6 +59,6 @@ let parserDocumentHeader* = peg("header", item: DocumentHeaderObj):
   attributes <- *attribute
 
   # Content
-  header <- *emptyorcomment * title * authors * revinfo * attributes * emptyLine 
+  header <- *adoc.emptyorcomment * title * authors * revinfo * attributes * adoc.emptyLine 
 
 

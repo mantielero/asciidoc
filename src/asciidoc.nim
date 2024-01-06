@@ -1,3 +1,4 @@
+# nim c -r --deepcopy:on test_ex_01 &&   tidy -i --indent-spaces 2  -quiet --tidy-mark no ex01.html > ex01_new.html
 # nim js -r -d:nodejs -d:release asciidoctor
 import std/[tables, strformat, strutils, os]
 import npeg
@@ -29,13 +30,10 @@ proc `in`(val:string; values:seq[tuple[symbol:string;level:int]]):bool =
       return true
   return false
 
-proc parseAdoc*(text:string; folder: string = ""):ADoc =
-  # PREPROCESSOR DIRECTIVES - include::target[...]
-  # https://docs.asciidoctor.org/asciidoc/latest/directives/conditionals/
-  # https://docs.asciidoctor.org/asciidoc/latest/directives/include/#include-processing
-  #var lines = txt.splitLines
-  debug("asciidoc.nim > proc parseAdoc: entering preprocessor")
-  var txt = text
+
+proc preprocess(txt:var string; folder:string) =
+  debug("asciidoc.nim - preprocess: entering")
+  #var txt = text
   var backupTxt = txt
   var variables:Table[string,string]
   var includes:Table[string,string]
@@ -90,11 +88,13 @@ proc parseAdoc*(text:string; folder: string = ""):ADoc =
   txt = backupTxt
   for (line,value) in includes.pairs:
     txt = txt.replace(line, value)
+  debug("asciidoc.nim - preprocess: leaving")
 
 
-  # ===========================
-  debug("asciidoc.nim > proc parseAdoc: starting parsing")
-  # 1. Parse Doc Header
+
+proc parser(txt:var string):ADoc =
+  debug("asciidoc.nim: entering parser")
+  # 1. Parse Doc Header  
   var
     adoc:ADoc
     unorderedList:seq[string]   = @[]
@@ -104,7 +104,7 @@ proc parseAdoc*(text:string; folder: string = ""):ADoc =
   # After preprocessor
   var n = 0
   var flag = true
-  variables.clear       # Reinit the table
+  var variables:Table[string,string]
   var currentLevel = 0  # Tracking the nesting level
   var blockLevels:seq[int] = @[]
   var blocks:seq[tuple[symbol:string;level:int]]   = @[]
@@ -323,8 +323,81 @@ proc parseAdoc*(text:string; folder: string = ""):ADoc =
     error(&"""BREAKING SINCE NOT IMPROVING. Remaining text:
 {txt}
 """)
+  debug("asciidoc.nim: leaving parser")
+
+
+proc pb(myBlock:Block) =
+  # If not done, process content
+  if not myBlock.done:
+    var b:Block = myBlock
+    var res = parserBlocks.match( myBLock.content, b)
+    echo res
+    #for i in 0 .. myBlock.blocks.high:
+    for b in myBlock.blocks:
+      pb(b)
+    # if myBlock.blocks.len > 0:
+    #   for i in 0..myBlock.blocks.high:
+    #     var b = myBlock.blocks[i]
+    #     var txt = b.content
+    #     #echo txt
+    #     var res = parserBlocks.match( txt, b)
+
+
+proc parserBlks(txt:string):Block =
+  var blkDoc:Block
+  new(blkDoc)
+  #blkDoc.txt = @[]
+  blkDoc.kind = document
+  blkDoc.done = false
+  var text = """
+# Prueba
+
+====
+Here are your options:
+
+.Red Pill
+[example%collapsible]
+======
+Escape into the real world.
+======
+
+.Blue Pill
+[%collapsible]
+======
+Live within the simulated reality without want or fear.
+======
+====
+"""
+
+  var res = parserBlocks.match(text, blkDoc)
+  #echo res
+  #echo blkDoc
+  #if res.ok:
+  #  echo res.captures
   
-  return adoc
+  pb(blkDoc)
+  echo blkDoc
+
+  return blkDoc
+
+
+
+
+
+proc parseAdoc*(txt:var string; folder: string = "") =#:ADoc =
+  # PREPROCESSOR DIRECTIVES - include::target[...]
+  # https://docs.asciidoctor.org/asciidoc/latest/directives/conditionals/
+  # https://docs.asciidoctor.org/asciidoc/latest/directives/include/#include-processing
+  #var lines = txt.splitLines
+  txt.preprocess(folder)
+
+
+  var blk =  txt.parserBlks()
+  
+  echo repr blk
+
+  
+  #return adoc
 
 
 #[
