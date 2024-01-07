@@ -343,6 +343,61 @@ proc pb(myBlock:Block) =
     #     var res = parserBlocks.match( txt, b)
 
 
+proc restructure(blk:var Block) =
+  # Find max level
+  var level = -1
+  for b in blk.blocks:
+    if b.kind == section:
+      var lvl = b.attributes[":level"].parseInt 
+      if lvl > level:
+        level = lvl
+  
+  ## Gives a proper structure for sections
+  #var currentLevel = -1
+  #echo level
+  var ids:seq[int]
+  var deleteList:seq[int]
+  var flag = true
+  while flag:
+    flag = false # we will stop when no more sections found
+    # Check all blocks from end to start
+    for i in 0..blk.blocks.high:
+      var idx = blk.blocks.high - i
+      var b = blk.blocks[idx]
+      echo idx, b.kind, "----"
+      if b.kind == section: # a section
+        var lvl = b.attributes[":level"].parseInt
+        flag = true
+
+        # There are children
+        if ids.len > 0:        
+          for j in 0..ids.high:
+            var n = ids.high - j
+            b.blocks &= blk.blocks[ids[n]]
+          
+          deleteList &= ids
+          ids = @[]
+
+        # If no children:
+        elif lvl == level:
+          ids &= idx
+        elif lvl < level:
+          ids = @[]
+        
+      else: # Not a section
+        ids &= idx
+
+    for j in deleteList:
+      blk.blocks.delete(j)
+    deleteList = @[]
+
+    ids = @[]      
+    #  echo ids
+    level -= 1
+    if level == 1:
+      flag = false
+      
+
 proc parserBlks(txt:string):Block =
   var blkDoc:Block
   new(blkDoc)
@@ -351,6 +406,8 @@ proc parserBlks(txt:string):Block =
   blkDoc.done = false
   var text = """
 = Document Title (Level 0)
+
+This is some text
 
 == Level 1 Section Title
 
@@ -370,13 +427,16 @@ proc parserBlks(txt:string):Block =
 """
 
   var res = parserBlocks.match(text, blkDoc)
+  blkDoc.restructure()
   #echo res
   #echo blkDoc
   #if res.ok:
   #  echo res.captures
   
-  pb(blkDoc)
+  #pb(blkDoc)
+  echo "????????????"
   echo blkDoc
+  echo "------------"
 
   return blkDoc
 

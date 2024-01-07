@@ -212,6 +212,7 @@ type
 #----
 type
   BlckType* = enum
+    unknown
     document
     documentHeader
     paragraph
@@ -245,6 +246,16 @@ type
     #txt*:ref string
 
 
+proc clear*(blk:Block) =
+  blk.blocks = @[]
+  blk.title  = ""
+  blk.attributes.clear
+  blk.variables.clear
+  blk.content = ""
+  blk.kind = unknown
+  blk.done = false
+
+
 proc getHeader(blk:Block; ident:int = 0):string =
   var spa = ""
   if ident > 0:
@@ -253,7 +264,10 @@ proc getHeader(blk:Block; ident:int = 0):string =
   result &= &"{spa}  - done: {blk.done}\n"  
   result &= &"{spa}  - attributes:\n"
   for (key,value) in blk.attributes.pairs():
-    result &= &"{spa}      {key}: {value}\n"    
+    result &= &"{spa}      {key}: {value}\n"  
+  result &= &"{spa}  - variables:\n"
+  for (key,value) in blk.variables.pairs():
+    result &= &"{spa}      {key}: {value}\n"        
   result &= &"{spa}  - content:\n"
   for line in blk.content.splitLines:
     result &= &"{spa}    |{line}|\n"

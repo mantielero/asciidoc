@@ -280,11 +280,12 @@ proc parserBlocksGen():auto =
               db.done = true
               db.kind = documentHeader
               blk.blocks &= db.deepCopy
+              db.clear()
               # Cleaning
-              db.title = ""
-              db.content = ""
-              db.done = false
-              db.attributes.clear()              
+              # db.title = ""
+              # db.content = ""
+              # db.done = false
+              # db.attributes.clear()              
 
             # ---- Paragraph ----
             # ---- Paragraph Blocks ----
