@@ -92,7 +92,7 @@ proc preprocess(txt:var string; folder:string) =
 
 
 
-proc parser(txt:var string):ADoc =
+#[ proc parser(txt:var string):ADoc =
   debug("asciidoc.nim: entering parser")
   # 1. Parse Doc Header  
   var
@@ -324,7 +324,7 @@ proc parser(txt:var string):ADoc =
 {txt}
 """)
   debug("asciidoc.nim: leaving parser")
-
+ ]#
 
 proc pb(myBlock:Block) =
   # If not done, process content
@@ -364,7 +364,7 @@ proc restructure(blk:var Block) =
     for i in 0..blk.blocks.high:
       var idx = blk.blocks.high - i
       var b = blk.blocks[idx]
-      echo idx, b.kind, "----"
+      #echo idx, b.kind, "----"
       if b.kind == section: # a section
         var lvl = b.attributes[":level"].parseInt
         flag = true
@@ -434,9 +434,9 @@ This is some text
   #  echo res.captures
   
   #pb(blkDoc)
-  echo "????????????"
+  #echo "????????????"
   echo blkDoc
-  echo "------------"
+  #echo "------------"
 
   return blkDoc
 
@@ -454,7 +454,7 @@ proc parseAdoc*(txt:var string; folder: string = "") =#:ADoc =
 
   var blk =  txt.parserBlks()
   
-  echo repr blk
+  #echo repr blk
 
   
   #return adoc

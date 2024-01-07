@@ -1,5 +1,7 @@
 = Document Title (Level 0)
 
+This is some text
+
 == Level 1 Section Title
 
 === Level 2 Section Title
@@ -7,6 +9,10 @@
 ==== Level 3 Section Title
 
 ===== Level 4 Section Title
+
+////
+== Fake level 1 Section Title
+////
 
 ====== Level 5 Section Title
 
