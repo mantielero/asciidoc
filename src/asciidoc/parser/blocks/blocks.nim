@@ -113,19 +113,42 @@ proc parserBlocksGen():auto =
               db.clear()  # Cleaning
               
             # ---- Lists ----
+            listTitle     <- '.' * >adoc.txt * adoc.crlf:
+              db.kind = listTitle
+              db.title = $1
+              blk.blocks &= db.deepCopy
+              db.clear()              
             listSeparator <- adoc.listSeparator:
               db.kind = listSeparator
               blk.blocks &= db.deepCopy
               db.clear() 
             listBullet    <- *' ' * +('*'|'-'|'.'|'#')
-            endListItem   <- (adoc.crlf * listBullet) | (adoc.crlf[2])
-            listItem      <- *adoc.emptyorcomment * >listBullet * ' ' * >+(1-endListItem) * adoc.crlf:
+            listContinuationSymbol  <- '+' * adoc.crlf:
+              db.kind = listContinuationSymbol
+              blk.blocks &= db.deepCopy
+              db.clear() 
+            endListItem   <- (adoc.crlf * listBullet) | (adoc.crlf[2]) | (adoc.crlf * listContinuationSymbol)
+            listItem      <- *adoc.emptyorcomment * ?listTitle * >listBullet * ' ' * >+(1-endListItem) * adoc.crlf:
               db.attributes[":symbol"]  = $1
               db.content = $2
               db.kind = listItem
               blk.blocks &= db.deepCopy
-              db.clear()              
-             
+              db.clear()    
+
+            listDescriptionTerm   <- +(1 - ':' - ';' - '\r' - '\n') 
+            listDescriptionSymbol <- ("::"|":::"|"::::"|";;")
+            listDescriptionStop   <- (adoc.crlf * listDescriptionTerm * listDescriptionSymbol) | endListItem
+            listDescription <- *adoc.emptyorcomment * >listDescriptionTerm * >listDescriptionSymbol * (' '|adoc.crlf) * >*(1-listDescriptionStop):# * adoc.crlf:
+              db.attributes[":symbol"] = $2
+              db.title = $1
+              db.kind = listDescriptionItem
+              var tmp = if capture.len == 4:
+                          ($3).strip()
+                        else:
+                          ""
+              db.content = tmp
+              blk.blocks &= db.deepCopy
+              db.clear()   
             # ---- Indented Paragraph ---- 
             # TODO
 
@@ -188,6 +211,6 @@ proc parserBlocksGen():auto =
               db.attributes.clear()
 
             # ALL BLOCKS
-            blocks <- *(docheader | delimitedBlocks | citeBlock | section | listSeparator | listItem | paragraph)
+            blocks <- *(docheader | delimitedBlocks | citeBlock | section | listSeparator | listItem | listDescription | paragraph)
 
 let parserBlocks* = parserBlocksGen()

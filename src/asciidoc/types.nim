@@ -237,6 +237,9 @@ type
     # Lists
     listItem
     listSeparator
+    listContinuationSymbol
+    listTitle
+    listDescriptionItem
     
   Block* = ref object
     blocks*:seq[Block]

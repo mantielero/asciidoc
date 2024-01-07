@@ -405,6 +405,7 @@ proc parserBlks(txt:string):Block =
   blkDoc.kind = document
   blkDoc.done = false
   var text = """
+.My title
 * List item
 ** Nested list item
 with multiline
@@ -415,6 +416,13 @@ with multiline
 * List item
 
 //
+
+
+First term:: The description can be placed on the same line
+as the term.
+Second term::
+Description of the second term.
+The description can also start on its own line.
 
 * Every list item has at least one paragraph of content,
   which may be wrapped, even using a hanging indent.
@@ -427,6 +435,9 @@ list continuation:: a plus sign (`{plus}`) on a line by itself
 * A literal paragraph does not require a list continuation.
 
  $ cd projects/my-book
+
+
+
 """
 #[ """
 ////
