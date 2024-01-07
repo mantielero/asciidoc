@@ -360,6 +360,10 @@ proc parserBlks(txt:string):Block =
 
 ===== Level 4 Section Title
 
+////
+== Fake level 1 Section Title
+////
+
 ====== Level 5 Section Title
 
 == Another Level 1 Section Title

@@ -237,7 +237,8 @@ type
   Block* = ref object
     blocks*:seq[Block]
     title*:string
-    attributes*:string
+    attributes*:OrderedTable[string,string]
+    variables*:OrderedTable[string,string]
     content*:string
     kind*: BlckType
     done*: bool = false
@@ -250,7 +251,9 @@ proc getHeader(blk:Block; ident:int = 0):string =
     spa = " ".repeat(ident)
   result = &"{spa}BLOCK [{blk.kind}]: {blk.title}\n"
   result &= &"{spa}  - done: {blk.done}\n"  
-  result &= &"{spa}  - attributes: {blk.attributes}\n"
+  result &= &"{spa}  - attributes:\n"
+  for (key,value) in blk.attributes.pairs():
+    result &= &"{spa}      {key}: {value}\n"    
   result &= &"{spa}  - content:\n"
   for line in blk.content.splitLines:
     result &= &"{spa}    |{line}|\n"
