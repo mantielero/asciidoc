@@ -123,10 +123,11 @@ proc parserBlocksGen():auto =
               blk.blocks &= db.deepCopy
               db.clear() 
             listBullet    <- *' ' * +('*'|'-'|'.'|'#')
-            listContinuationSymbol  <- '+' * adoc.crlf:
+            listContinuationSymbol  <- !adoc.emptyorcomment * '+' * adoc.crlf * !adoc.emptyorcomment :
               db.kind = listContinuationSymbol
               blk.blocks &= db.deepCopy
-              db.clear() 
+              db.clear()               
+
             endListItem   <- (adoc.crlf * listBullet) | (adoc.crlf[2]) | (adoc.crlf * listContinuationSymbol)
             listItem      <- *adoc.emptyorcomment * ?listTitle * >listBullet * ' ' * >+(1-endListItem) * adoc.crlf:
               db.attributes[":symbol"]  = $1
@@ -153,7 +154,7 @@ proc parserBlocksGen():auto =
             # TODO
 
             # ---- Paragraph ----
-            paragraph <- *adoc.emptyorcomment  * !adoc.blockDelimiters * ?attributes * >+(1 - adoc.crlf[2]):#>@adoc.emptyLine:
+            paragraph <- *adoc.emptyorcomment  * !adoc.blockDelimiters * ?attributes * >+(1 - adoc.crlf[2]-listContinuationSymbol):#>@adoc.emptyLine:
               db.title = ""
               db.content = $1
               #if db.attributes == "":
@@ -211,6 +212,11 @@ proc parserBlocksGen():auto =
               db.attributes.clear()
 
             # ALL BLOCKS
-            blocks <- *(docheader | delimitedBlocks | citeBlock | section | listSeparator | listItem | listDescription | paragraph)
+            blocks <- *(docheader | delimitedBlocks | citeBlock | section | listContinuationSymbol | listSeparator | listItem | listDescription | paragraph)
+
 
 let parserBlocks* = parserBlocksGen()
+
+
+# TODO: listContinuationSymbol
+# (listItem | listDescriptionItem) * *(listContinuationSymbol * anyBlock)

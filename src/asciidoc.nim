@@ -398,6 +398,46 @@ proc restructure(blk:var Block) =
       flag = false
       
 
+proc restructureList(blk:Block) =
+  # Continuation Symbol
+  #var listBlocks:seq[Block]
+  var deleteList:seq[int]
+  var flag = true
+  while flag:
+    flag = false
+    for i in 0..<blk.blocks.high:
+      #echo "---------------- i:",i
+      #echo blk.blocks[i]
+      if blk.blocks[i+1].kind == listContinuationSymbol:
+        blk.blocks[i].blocks &= blk.blocks[i+2]
+        deleteList &= i+2
+        deleteList &= i+1
+        flag = true
+        #echo "Adding ", i+2
+        #echo blk.blocks[i+2]
+
+        #echo "Deleting"
+        #echo deleteList
+        break
+    for i in deleteList:
+      blk.blocks.delete(i)
+    deleteList = @[]
+    #echo "==========="
+    #echo blk
+
+
+    #if b.kind in @[listTitle, listItem, listContinuationSymbol
+
+
+#[
+    listItem
+    listSeparator
+    listContinuationSymbol
+    listTitle
+    listDescriptionItem
+    list
+]#
+
 proc parserBlks(txt:string):Block =
   var blkDoc:Block
   new(blkDoc)
@@ -506,6 +546,11 @@ Cloud Providers::
 """ ]#
 
   var res = parserBlocks.match(text, blkDoc)
+  for i in 0..blkDoc.blocks.high:
+    echo "===================="
+    echo "BLOCK#",i
+    echo blkDoc.blocks[i]
+  blkDoc.restructureList
   blkDoc.restructure()
   #echo res
   #echo blkDoc
@@ -514,7 +559,7 @@ Cloud Providers::
   
   #pb(blkDoc)
   #echo "????????????"
-  echo blkDoc
+  #echo blkDoc
   #echo "------------"
 
   return blkDoc

@@ -240,6 +240,7 @@ type
     listContinuationSymbol
     listTitle
     listDescriptionItem
+    list
     
   Block* = ref object
     blocks*:seq[Block]
