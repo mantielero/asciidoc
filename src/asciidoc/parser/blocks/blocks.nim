@@ -123,18 +123,23 @@ proc parserBlocksGen():auto =
               blk.blocks &= db.deepCopy
               db.clear() 
             listBullet    <- *' ' * +('*'|'-'|'.'|'#')
-            listContinuationSymbol  <- !adoc.emptyorcomment * '+' * adoc.crlf * !adoc.emptyorcomment :
+
+            listContinuationSymbol <- adoc.listContinuationSymbol:
+              # if ($1) == "+":
               db.kind = listContinuationSymbol
               blk.blocks &= db.deepCopy
-              db.clear()               
+              db.clear()   
+              echo "LIST CONT SYMBOL"                          
 
-            endListItem   <- (adoc.crlf * listBullet) | (adoc.crlf[2]) | (adoc.crlf * listContinuationSymbol)
+            endListItem   <- adoc.crlf * (listBullet | adoc.crlf | adoc.listContinuationSymbol)
+
             listItem      <- *adoc.emptyorcomment * ?listTitle * >listBullet * ' ' * >+(1-endListItem) * adoc.crlf:
               db.attributes[":symbol"]  = $1
               db.content = $2
               db.kind = listItem
               blk.blocks &= db.deepCopy
-              db.clear()    
+              db.clear()   
+              echo "LIST ITEM"                 
 
             listDescriptionTerm   <- +(1 - ':' - ';' - '\r' - '\n') 
             listDescriptionSymbol <- ("::"|":::"|"::::"|";;")
@@ -150,11 +155,12 @@ proc parserBlocksGen():auto =
               db.content = tmp
               blk.blocks &= db.deepCopy
               db.clear()   
+              echo "LIST DESCRIPTION"
             # ---- Indented Paragraph ---- 
             # TODO
 
             # ---- Paragraph ----
-            paragraph <- *adoc.emptyorcomment  * !adoc.blockDelimiters * ?attributes * >+(1 - adoc.crlf[2]-listContinuationSymbol):#>@adoc.emptyLine:
+            paragraph <- *adoc.emptyorcomment  * !adoc.blockDelimiters * ?attributes * >+(1 - adoc.crlf[2]-adoc.listContinuationSymbol):#>@adoc.emptyLine:
               db.title = ""
               db.content = $1
               #if db.attributes == "":
@@ -215,8 +221,11 @@ proc parserBlocksGen():auto =
             blocks <- *(docheader | delimitedBlocks | citeBlock | section | listContinuationSymbol | listSeparator | listItem | listDescription | paragraph)
 
 
+
+
 let parserBlocks* = parserBlocksGen()
 
 
 # TODO: listContinuationSymbol
 # (listItem | listDescriptionItem) * *(listContinuationSymbol * anyBlock)
+# In addition to the principal text, a list item may contain block elements, including paragraphs, delimited blocks, and block macros. 

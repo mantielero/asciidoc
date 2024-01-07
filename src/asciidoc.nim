@@ -546,10 +546,10 @@ Cloud Providers::
 """ ]#
 
   var res = parserBlocks.match(text, blkDoc)
-  for i in 0..blkDoc.blocks.high:
-    echo "===================="
-    echo "BLOCK#",i
-    echo blkDoc.blocks[i]
+  # for i in 0..blkDoc.blocks.high:
+  #   echo "===================="
+  #   echo "BLOCK#",i
+  #   echo blkDoc.blocks[i]
   blkDoc.restructureList
   blkDoc.restructure()
   #echo res
@@ -559,7 +559,7 @@ Cloud Providers::
   
   #pb(blkDoc)
   #echo "????????????"
-  #echo blkDoc
+  echo blkDoc
   #echo "------------"
 
   return blkDoc
