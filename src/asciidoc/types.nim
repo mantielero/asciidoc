@@ -234,6 +234,9 @@ type
     table4   # !===    
     pass     # ++++
     quote    # ____
+    # Lists
+    listItem
+    listSeparator
     
   Block* = ref object
     blocks*:seq[Block]

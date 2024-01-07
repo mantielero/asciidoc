@@ -110,46 +110,26 @@ proc parserBlocksGen():auto =
               db.done = true
               db.kind = documentHeader
               blk.blocks &= db.deepCopy
-              db.clear()
-              # Cleaning
-              # db.title = ""
-              # db.content = ""
-              # db.done = false
-              # db.attributes.clear()              
+              db.clear()  # Cleaning
+              
+            # ---- Lists ----
+            listSeparator <- adoc.listSeparator:
+              db.kind = listSeparator
+              blk.blocks &= db.deepCopy
+              db.clear() 
+            listBullet    <- *' ' * +('*'|'-'|'.'|'#')
+            endListItem   <- (adoc.crlf * listBullet) | (adoc.crlf[2])
+            listItem      <- *adoc.emptyorcomment * >listBullet * ' ' * >+(1-endListItem) * adoc.crlf:
+              db.attributes[":symbol"]  = $1
+              db.content = $2
+              db.kind = listItem
+              blk.blocks &= db.deepCopy
+              db.clear()              
+             
+            # ---- Indented Paragraph ---- 
+            # TODO
 
             # ---- Paragraph ----
-            # ---- Paragraph Blocks ----
-            # paraAttr   <- '[' * >*(1 - '[' - ']' - ',' - '%' - '=') * >*(1 - '[' - ']' - '\r' - '\n') * ']' * adoc.crlf:
-            #   var txt = $1
-            #   case txt: 
-            #   of "example":
-            #     db.kind = example
-            #   of "listing": 
-            #     db.kind = listing
-            #     db.done = true
-            #   of "literal": 
-            #     db.kind = literal
-            #     db.done = true
-            #   of "pass":    
-            #     db.kind = pass
-            #     db.done = true
-            #   of "quote":   
-            #     db.kind = quote
-            #   of "sidebar": 
-            #     db.kind = sidebar
-            #   of "source":  
-            #     db.kind = source
-            #   of "stem":    
-            #     db.kind = stem
-            #   of "verse":   
-            #     db.kind = verse 
-            #   else:
-            #     db.kind = paragraph
-            #   #if capture.len == 3 :
-            #   db.attributes = $0
-            #   #echo ">>>>>", $1   
-
-
             paragraph <- *adoc.emptyorcomment  * !adoc.blockDelimiters * ?attributes * >+(1 - adoc.crlf[2]):#>@adoc.emptyLine:
               db.title = ""
               db.content = $1
@@ -208,6 +188,6 @@ proc parserBlocksGen():auto =
               db.attributes.clear()
 
             # ALL BLOCKS
-            blocks <- *(docheader | delimitedBlocks | citeBlock | section | paragraph)
+            blocks <- *(docheader | delimitedBlocks | citeBlock | section | listSeparator | listItem | paragraph)
 
 let parserBlocks* = parserBlocksGen()
