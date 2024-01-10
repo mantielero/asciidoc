@@ -343,11 +343,11 @@ proc pb(myBlock:Block) =
     #     var res = parserBlocks.match( txt, b)
 
 
-proc restructure(blk:var Block) =
+proc restructure(blk:var Block; kind:BlckType = section) =
   # Find max level
   var level = -1
   for b in blk.blocks:
-    if b.kind == section:
+    if b.kind == kind:
       var lvl = b.attributes[":level"].parseInt 
       if lvl > level:
         level = lvl
@@ -365,7 +365,7 @@ proc restructure(blk:var Block) =
       var idx = blk.blocks.high - i
       var b = blk.blocks[idx]
       #echo idx, b.kind, "----"
-      if b.kind == section: # a section
+      if b.kind == kind: # a section
         var lvl = b.attributes[":level"].parseInt
         flag = true
 
@@ -385,7 +385,10 @@ proc restructure(blk:var Block) =
           ids = @[]
         
       else: # Not a section
-        ids &= idx
+        if kind == listItem and b.kind == listSeparator:
+          ids = @[]
+        else:
+          ids &= idx
 
     for j in deleteList:
       blk.blocks.delete(j)
@@ -400,31 +403,152 @@ proc restructure(blk:var Block) =
 
 proc restructureList(blk:Block) =
   # Continuation Symbol
-  #var listBlocks:seq[Block]
   var deleteList:seq[int]
   var flag = true
   while flag:
     flag = false
     for i in 0..<blk.blocks.high:
-      #echo "---------------- i:",i
-      #echo blk.blocks[i]
       if blk.blocks[i+1].kind == listContinuationSymbol:
         blk.blocks[i].blocks &= blk.blocks[i+2]
         deleteList &= i+2
         deleteList &= i+1
         flag = true
-        #echo "Adding ", i+2
-        #echo blk.blocks[i+2]
 
-        #echo "Deleting"
-        #echo deleteList
         break
     for i in deleteList:
       blk.blocks.delete(i)
     deleteList = @[]
-    #echo "==========="
-    #echo blk
 
+  # TODO: unordered list
+  # TODO: ordered list
+  # TODO: description list
+  var unorderedSymbols:seq[string]
+  var orderedSymbols:seq[string]  
+  for b in blk.blocks:
+    if b.kind == listItem:
+      var symbol = b.attributes[":symbol"]
+      if symbol.contains('*') or symbol.contains('-'):
+        b.attributes[":listType"] = "unordered"
+        if not (symbol in unorderedSymbols):
+          unorderedSymbols &= symbol
+          b.attributes[":level"] = $(unorderedSymbols.high + 1)
+        else:
+          var n = unorderedSymbols.find(symbol)
+          if n < unorderedSymbols.high and unorderedSymbols.high > 1:
+            for i in (n+1)..unorderedSymbols.high:
+              unorderedSymbols.delete(n+1)
+          b.attributes[":level"] = $(n+1)
+
+      elif symbol.contains('.') or symbol.contains('#'):
+        b.attributes[":listType"] = "ordered"        
+        if not (symbol in orderedSymbols):
+          orderedSymbols &= symbol       
+          b.attributes[":level"] = $(orderedSymbols.high + 1) 
+        else:
+          b.attributes[":level"] = $(orderedSymbols.find(symbol) + 1) 
+    elif b.kind == listSeparator:
+      unorderedSymbols = @[]
+      orderedSymbols   = @[]     
+
+proc groupList(blk:Block) =
+  # Group in lists
+  var flag = true
+  #var isList = false
+  var idx = 0
+  while idx < blk.blocks.high:
+
+    #for i in 0..blk.blocks.high:
+    var b = blk.blocks[idx]
+
+    if b.kind in @[listTitle, list]:
+      b.kind = list
+      idx += 1
+
+      while blk.blocks[idx].kind == listItem:
+        b.blocks &= blk.blocks[idx]
+        echo idx, " ",blk.blocks.len
+        blk.blocks.delete(idx)
+
+        #idx += 1
+
+    elif not (b.kind in @[listTitle, listItem]):
+      var b2:Block
+      new(b2)
+      b2.kind = list
+      blk.blocks.insert(b2, idx+1)
+      #if b2.kind == listItem and not isList:
+    idx += 1
+
+
+
+# proc restructure2(blk:var Block) =
+#   # Find max level
+#   var level = -1
+#   for b in blk.blocks:
+#     if b.kind == listItem: #<< section -> listItem
+#       var lvl = b.attributes[":level"].parseInt 
+#       if lvl > level:
+#         level = lvl
+  
+#   ## Gives a proper structure for sections
+#   #var currentLevel = -1
+#   #echo level
+#   var ids:seq[int]
+#   var deleteList:seq[int]
+#   var flag = true
+#   while flag:
+#     flag = false # we will stop when no more sections found
+#     # Check all blocks from end to start
+#     for i in 0..blk.blocks.high:
+#       var idx = blk.blocks.high - i
+#       var b = blk.blocks[idx]
+#       #echo idx, b.kind, "----"
+#       if b.kind == listItem: #<< section -> listItem
+#         var lvl = b.attributes[":level"].parseInt
+#         flag = true
+
+#         # There are children
+#         if ids.len > 0:        
+#           for j in 0..ids.high:
+#             var n = ids.high - j
+#             b.blocks &= blk.blocks[ids[n]]
+          
+#           deleteList &= ids
+#           ids = @[]
+
+#         # If no children:
+#         elif lvl == level:
+#           ids &= idx
+#         elif lvl < level:
+#           ids = @[]
+        
+#       else: # Not a section
+#         ids &= idx
+
+#     for j in deleteList:
+#       blk.blocks.delete(j)
+#     deleteList = @[]
+
+#     ids = @[]      
+#     #  echo ids
+#     level -= 1
+#     if level == 1:
+#       flag = false 
+
+  # Reorder lists
+
+
+
+  # for b in blk.blocks:
+  #   if b.kind == listItem:
+  #     var symbol = b.attributes[":symbol"]
+  #     var listType = b.attributes[":listType"]
+  #     if listType == "unordered":
+  #       b.attributes[":level"] = $(unorderedSymbols.find(symbol) + 1)
+  #     elif listType == "ordered":
+  #       b.attributes[":level"] = $(orderedSymbols.find(symbol) + 1)
+  #echo unorderedSymbols
+  #echo orderedSymbols
 
     #if b.kind in @[listTitle, listItem, listContinuationSymbol
 
@@ -551,7 +675,10 @@ Cloud Providers::
   #   echo "BLOCK#",i
   #   echo blkDoc.blocks[i]
   blkDoc.restructureList
-  blkDoc.restructure()
+  blkDoc.restructure(listItem)
+  #echo blkDoc
+  blkDoc.groupList()
+  blkDoc.restructure(section)
   #echo res
   #echo blkDoc
   #if res.ok:
