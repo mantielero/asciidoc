@@ -686,7 +686,7 @@ Cloud Providers::
   
   #pb(blkDoc)
   #echo "????????????"
-  echo blkDoc
+  #echo blkDoc
   #echo "------------"
 
   return blkDoc
@@ -695,7 +695,7 @@ Cloud Providers::
 
 
 
-proc parseAdoc*(txt:var string; folder: string = "") =#:ADoc =
+proc parseAdoc*(txt:var string; folder: string = ""):Block = # ADoc =
   # PREPROCESSOR DIRECTIVES - include::target[...]
   # https://docs.asciidoctor.org/asciidoc/latest/directives/conditionals/
   # https://docs.asciidoctor.org/asciidoc/latest/directives/include/#include-processing
@@ -704,11 +704,11 @@ proc parseAdoc*(txt:var string; folder: string = "") =#:ADoc =
 
 
   var blk =  txt.parserBlks()
-  
+  #echo blk
   #echo repr blk
 
   
-  #return adoc
+  return blk
 
 
 #[
