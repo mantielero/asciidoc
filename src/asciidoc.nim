@@ -139,61 +139,6 @@ proc postProcess(blk:Block) =
         flag = false
         txt =  txt[res.matchMax .. txt.high]
 
-      # 3. Block Delimiter
-      if flag:
-        #debug("Found block delimiter:")
-        var blockDelimiter:BlockDelimiterObj
-        res = parserBlockDelimiter.match(txt, blockDelimiter)
-        
-        if res.ok:
-          blockDelimiter.level = currentLevel
-          if not (blockDelimiter.symbol in blocks):
-            blockDelimiter.limitType = starting
-            blocks &= (blockDelimiter.symbol, currentLevel)
-            currentLevel += 1 # Increase the nesting
-          else:
-            blockDelimiter.limitType = ending
-            #debug("deleting block delimiter")
-            #debug("block: " & $blocks)
-            var tmp:string
-            var n = -1
-            for j in 0..blocks.high:
-              var blk = blocks[j]
-              if blk.symbol == blockDelimiter.symbol:
-                blockDelimiter.level = blk.level
-                n = j
-            blocks.delete( n )
-            #debug("block: " & $blocks)             
-            currentLevel = blockDelimiter.level - 1
-            #blockDelimiter.level = currentLevel
-          #blocks &= blockDelimiter.symbol
-          
-          adoc.blockDelimiters &= blockDelimiter
-          adoc.items &= (itBlockDelimiter, adoc.blockDelimiters.high)      
-          flag = false
-          #debug(blockDelimiter)
-          txt =  txt[res.matchMax .. txt.high]
-
-          if blockDelimiter.typ == BlockType.comment and blockDelimiter.limitType == LimitType.starting:
-            isComment = true
-          #debug("TXT:" & txt)
-          #debug("Found block delimiter:\n" & $blockDelimiter)
-
-      # 4. Parse list separator.
-      if flag:
-        res = parserListSeparator.match(txt)
-        if res.ok:
-          adoc.items &= (itListSeparator, -1)    
-          flag = false
-          txt =  txt[res.matchMax .. txt.high]
-          # TODO: find more conditions to init the lists 
-          unorderedList   = @[]
-          orderedList     = @[]
-          descriptionList = @[]
-          debug("LIST SEPARATOR")
-          debug("blocklevels: " & $blockLevels)
-          currentLevel = blockLevels[blockLevels.high]
-          #blockLevels.delete(blockLevels.high)
 
 
       # 6. Parse attributes.
@@ -508,208 +453,20 @@ proc groupList(blk:Block) =
 
  
 
-# proc restructure2(blk:var Block) =
-#   # Find max level
-#   var level = -1
-#   for b in blk.blocks:
-#     if b.kind == listItem: #<< section -> listItem
-#       var lvl = b.attributes[":level"].parseInt 
-#       if lvl > level:
-#         level = lvl
-  
-#   ## Gives a proper structure for sections
-#   #var currentLevel = -1
-#   #echo level
-#   var ids:seq[int]
-#   var deleteList:seq[int]
-#   var flag = true
-#   while flag:
-#     flag = false # we will stop when no more sections found
-#     # Check all blocks from end to start
-#     for i in 0..blk.blocks.high:
-#       var idx = blk.blocks.high - i
-#       var b = blk.blocks[idx]
-#       #echo idx, b.kind, "----"
-#       if b.kind == listItem: #<< section -> listItem
-#         var lvl = b.attributes[":level"].parseInt
-#         flag = true
-
-#         # There are children
-#         if ids.len > 0:        
-#           for j in 0..ids.high:
-#             var n = ids.high - j
-#             b.blocks &= blk.blocks[ids[n]]
-          
-#           deleteList &= ids
-#           ids = @[]
-
-#         # If no children:
-#         elif lvl == level:
-#           ids &= idx
-#         elif lvl < level:
-#           ids = @[]
-        
-#       else: # Not a section
-#         ids &= idx
-
-#     for j in deleteList:
-#       blk.blocks.delete(j)
-#     deleteList = @[]
-
-#     ids = @[]      
-#     #  echo ids
-#     level -= 1
-#     if level == 1:
-#       flag = false 
-
-  # Reorder lists
-
-
-
-  # for b in blk.blocks:
-  #   if b.kind == listItem:
-  #     var symbol = b.attributes[":symbol"]
-  #     var listType = b.attributes[":listType"]
-  #     if listType == "unordered":
-  #       b.attributes[":level"] = $(unorderedSymbols.find(symbol) + 1)
-  #     elif listType == "ordered":
-  #       b.attributes[":level"] = $(orderedSymbols.find(symbol) + 1)
-  #echo unorderedSymbols
-  #echo orderedSymbols
-
-    #if b.kind in @[listTitle, listItem, listContinuationSymbol
-
-
 proc parserBlks(txt:string):Block =
   var blkDoc:Block
   new(blkDoc)
   #blkDoc.txt = @[]
   blkDoc.kind = document
   blkDoc.done = false
-  var text = """
-.My title
-* List item
-  multilined
-** Nested list item
-with multiline
-*** Deeper nested list item
-    and another multiline example.
-* List item 2
- ** Another nested list item
-* List item
-     another    multiline
 
-//
-
-
-First term:: The description can be placed on the same line
-as the term.
-Second term::
-Description of the second term.
-The description can also start on its own line.
-
-* Every list item has at least one paragraph of content,
-  which may be wrapped, even using a hanging indent.
-+
-Additional paragraphs or blocks are adjoined by putting
-a list continuation on a line adjacent to both blocks.
-+
-list continuation:: a plus sign (`{plus}`) on a line by itself
-
-* A literal paragraph does not require a list continuation.
-
- $ cd projects/my-book
-
-
-
-"""
-#[ """
-////
-[]
-* Level 1 list item
-** Level 2 list item
-*** Level 3 list item
-**** Level 4 list item
-***** Level 5 list item
-****** etc.
-* Level 1 list item
-
-//
-
-. Step 1
-. Step 2
-.. Step 2a
-.. Step 2b
-. Step 3
-
-
-
-* [*] checked
-* [x] also checked
-* [ ] not checked
-* normal list item
-
-//
-
-First term:: The description can be placed on the same line
-as the term.
-Second term::
-Description of the second term.
-The description can also start on its own line.
-
-
-[qanda]
-What is the answer?::
-This is the answer.
-
-Are cameras allowed?::
-Are backpacks allowed?::
-No.
-
-//
-
-Operating Systems::
-  Linux:::
-    . Fedora
-      * Desktop
-    . Ubuntu
-      * Desktop
-      * Server
-  BSD:::
-    . FreeBSD
-    . NetBSD
-
-Cloud Providers::
-  PaaS:::
-    . OpenShift
-    . CloudBees
-  IaaS:::
-    . Amazon EC2
-    . Rackspace
-////
-""" ]#
-
-  var res = parserBlocks.match(text, blkDoc)
+  var res = parserBlocks.match(txt, blkDoc)
   blkDoc.postProcess
-  # for i in 0..blkDoc.blocks.high:
-  #   echo "===================="
-  #   echo "BLOCK#",i
-  #   echo blkDoc.blocks[i]
   blkDoc.restructureList
-  #blkDoc.restructure(listItem)
   blkDoc.listNesting
-  #echo blkDoc
   blkDoc.groupList()
+
   blkDoc.restructure(section)
-  #echo res
-  #echo blkDoc
-  #if res.ok:
-  #  echo res.captures
-  
-  #pb(blkDoc)
-  #echo "????????????"
-  #echo blkDoc
-  #echo "------------"
 
   return blkDoc
 
@@ -742,3 +499,17 @@ LEVELS:
 - 2:        <div class="sectionbody">
 - 2:      <div class="sect1">
 ]#
+
+# CLI part
+
+when isMainModule:
+  import cligen/argcvt, cligen
+  proc parse(adocName:string = "../examples/ex_01.adoc";
+             outputName:string = "ex01.html") =
+    var adocTxt = readFile(adocName)
+    var blocks = parseAdoc(adocTxt, "../examples/")
+    echo blocks
+
+    var adocHtml = blocks.convertToHtml
+    outputName.writeFile( "<!DOCTYPE html>\n" & ($adocHtml).string )
+  dispatch parse
