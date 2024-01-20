@@ -7,23 +7,121 @@ import stylesheet/[stylesheet]
 import header, paragraph, breaks, sections, list
 
 
-proc convertToHtml*(doc:ADoc):VNode =
+
+proc genListItem(listRoot:VNode; item:Block)
+
+proc genList(item:Block):VNode =
+  var listRoot = buildHtml(tdiv())
+  if item.blocks.len > 0:
+    # get first listItem index   # FIXME: there might be none
+    var idx = 0
+    while idx < item.blocks.high:
+      if item.blocks[idx].kind == BlckType.listItem:
+        break
+      idx += 1
+    
+    # get the list type for the first item
+    if item.blocks[idx].kind == BlckType.listItem:
+      var cls = case item.blocks[idx].attributes[":listType"]
+                of "unordered": "ulist"
+                of "ordered":   "olist"
+                of "dlist":     "dlist"
+                else: ""
+
+      listRoot.setAttr("class", cls)
+
+      # add the title if it exists
+      if item.kind == BlckType.list:
+        var title = item.title
+        if title != "":
+          var node =  buildHtml(tdiv(class="title")):
+                        text title
+          listRoot.add node
+
+      idx = 0
+      # add "<ul>"
+      var listTyp:Vnode
+      if cls == "ulist":
+        listTyp = buildHtml(ul())
+        listRoot.add listTyp
+      elif cls == "olist":
+        listTyp = buildHtml(ol())
+        listRoot.add listTyp
+      elif cls == "dlist":
+        listTyp = buildHtml(dl())
+        listRoot.add listTyp      
+
+      # TODO: add attribs
+      # if attribs != "":
+      #   myUl.setAttr("class", attribs)       
+      genListItem(listTyp, item)
+
+    # When it is not a listItem
+    else:  # FIXME
+      var content = item.content.splitWhitespace.join(" ")
+      var otherNode = buildHtml(p):
+                        text content
+      listRoot.add otherNode
+  return listRoot
+
+proc genListItem(listRoot:VNode; item:Block) =
+  # 3. Iterate over the children
+  for b in item.blocks:
+    if b.kind == BlckType.listItem:
+      # ordered and unordered case
+      if b.attributes[":listType"] in @["ordered", "unordered"]:
+        var newLi = buildHtml(li())
+
+        # Content
+        var content = b.content.splitWhitespace.join(" ")
+        var para =  buildHtml(p):
+                      text content
+        newLi.add para
+        if b.blocks.len > 0:
+          #genListItem(newLi, b)
+          var tmp = genList(b)
+          newLi.add tmp
+        listRoot.add newLi  
+
+      # description list case
+      elif b.attributes[":listType"] == "dlist":
+        var level = b.attributes[":level"]
+        var cls = &"hdlist{level}"
+        
+        # add <dt class="hdlist1">First term</dt> 
+        var newTerm = buildHtml(dt(class=cls)): # 
+                        text b.title     
+        var content = b.content.splitWhitespace.join(" ") 
+
+        # add <dd> ...      
+        var newDesc = buildHtml(dd()):
+                        p: text b.content
+        listRoot.add newTerm
+        listRoot.add newDesc
+        if b.blocks.len > 0:
+          var tmp = genList(b)
+          newDesc.add tmp        
+
+proc convertToHtml*(doc:Block):VNode =
+  debug("convertToHtml: starting")
   var description = ""
   var author = ""
   var title  = ""
   var revNumber = ""
-  for item in doc.items:
-    if item.kind == itDocHeader:
-      if "description" in doc.docheader[item.n].metadata:
-        description = doc.docheader[item.n].metadata["description"]
-        description = description.replace(" \\\n", " ")
-        for a in doc.docheader[item.n].authors:
-          author &= a.name
-          author &= ", "
-        if author.endsWith(", ") and author.len > 2:
-          author = author[0..(author.high - 2)]
 
-        title = doc.docheader[item.n].title
+  # Doc Header
+  for item in doc.blocks:
+    if item.kind == documentHeader:
+      # if "description" in doc.docheader[item.n].metadata:
+      #   description = doc.docheader[item.n].metadata["description"]
+      #   description = description.replace(" \\\n", " ")
+      #   for a in doc.docheader[item.n].authors:
+      #     author &= a.name
+      #     author &= ", "
+      #   if author.endsWith(", ") and author.len > 2:
+      #     author = author[0..(author.high - 2)]
+
+      #   title = doc.docheader[item.n].title
       break
   
   var i = 0  # Tracks current item in the document.
@@ -53,18 +151,21 @@ proc convertToHtml*(doc:ADoc):VNode =
   var bodyArticle = buildHtml(body(class="article"))
 
   # - Document Header
-
-  while i != doc.items.high:
-    var item = doc.items[i]
-    if item.kind == itDocHeader:
-      var tmp = header( doc.docheader[item.n] )
-      revNumber = doc.docheader[item.n].revnumber
-      bodyArticle.add tmp
+  #debug("HTML i: " & $i )
+  #debug("HTML high: " & $doc.blocks.high )
+  while i != doc.blocks.high:
+    var item = doc.blocks[i]
+    if item.kind == documentHeader:
+      # var tmp = header( doc.docheader[item.n] )
+      # revNumber = doc.docheader[item.n].revnumber
+      # bodyArticle.add tmp
       break
     i += 1
   result.add bodyArticle        # add the body to the HTML
   #var contents = @[bodyContent] # track the body
 
+  if i == doc.blocks.high:
+    i = 0
   #[
   LEVELS:
   - 0: <body class="article">
@@ -97,11 +198,13 @@ proc convertToHtml*(doc:ADoc):VNode =
   var currentTitle = ""
   var currentAttribute:AttributesObj
   var lastListLevel:int = -1
-  while i != doc.items.high:
-    var item = doc.items[i]
+  #debug("HTML i: " & $i )
+  #debug("HTML high: " & $doc.blocks.high )
+  while i <= doc.blocks.high:
+    var item = doc.blocks[i]
 
     # Optional: any content prior to first section is a preamble.
-    if item.kind != itSection and isPreamble:
+    if item.kind != section and isPreamble:
       debug("HTML - PREAMBLE: Creating preamble")
       # Create preamble.
       var preamble = buildHtml(tdiv(id="preamble"))
@@ -114,152 +217,133 @@ proc convertToHtml*(doc:ADoc):VNode =
       debug("HTML - PREAMBLE: insertPoint: " & $insertPoint)
 
     # -------------- ListItem ------------------
-    if item.kind == itListItem:
-      var listItem = doc.listItems[item.n]
-      debug("-------")
-      debug("HTML - LIST ITEM: processing:\n" & $listItem)   
-      debug("    insertPoint.len:"  & $insertPoint.len)         
-      # echo "---------"
-      # echo listItem
-      # echo "currentLevel: ", currentLevel
-      #echo "item level:", listItem.level
-      #echo "List level: ", listItem.listLevel
-      #echo insertPoint.len
-      var previous:VNode
-      if not isList or listItem.listLevel > lastListLevel:
-        previous = buildHtml(tdiv())
-        isList = true
+    if item.kind == BlckType.list:
+      debug("HTML: list found") # & $insertPoint)
+      #debug(item)
+      # 1. Create the root node
+      var listRoot = genList(item)
+      insertPoint[currentLevel].add listRoot
 
-      var cls = case listItem.typ
-                of ordered: "olist"
-                of unordered: "ulist"
-                of listDescription: "dlist"
-                else: ""
+    # if item.kind == listItem:
+    #   var listItem = doc.listItems[item.n]
 
-      # Title
-      if currentTitle != "":
-        var node =  buildHtml(tdiv(class="title")):
-                      text currentTitle
-        currentTitle = ""
-        previous.add node
+    #   # Attribs
+    #   var attribs = ""
+    #   if currentAttribute.keys.toSeq.len > 0:
+    #     for (key,value) in currentAttribute.pairs():
+    #       if value == "":
+    #         attribs &= " " & key
 
-      # Attribs
-      var attribs = ""
-      if currentAttribute.keys.toSeq.len > 0:
-        for (key,value) in currentAttribute.pairs():
-          if value == "":
-            attribs &= " " & key
-
-        currentAttribute.clear()
+    #     currentAttribute.clear()
      
-      # add the class to the div
-      if previous != nil:
-        previous.setAttr("class", cls & attribs)
+    #   # add the class to the div
+    #   if previous != nil:
+    #     previous.setAttr("class", cls & attribs)
 
-      # Gen node
-      var listItemVNode = list( listItem, attribs )
-
-
-      if listItem.listLevel > lastListLevel:
-        debug("listLevel change") 
-        var myUl = buildHtml(ul())
-        #myDiv.add myUl
-        if attribs != "":
-          myUl.setAttr("class", attribs)
-        previous.add myUl
-        myUl.add listItemVNode
-
-        if (insertPoint.len) <= listItem.level + 1:
-          insertPoint &= myUl
-          debug("inserting myUl")
-        else:
-          debug("replacing myUl")
-          debug("  insertPoint.len:" & $insertPoint.len)
-          debug("  listItem.level:" & $listItem.level)
-          insertPoint[listItem.level+1] = myUl
-          #debug("ok")
-
-        if (insertPoint.len) <= (listItem.level+2): 
-          debug("inserting LI")
-          insertPoint &= listItemVNode[0]
-        else:
-          debug("replacing LI")          
-          insertPoint[listItem.level+2] = listItemVNode[0]
-
-      elif previous == nil:
-        previous = listItemVNode
-
-      else:
-        debug("cleaning insertPoint")
-        debug("    insertPoint.len:"  & $insertPoint.len)
-        while insertPoint.high > (listItem.level+1):
-          insertPoint.delete(insertPoint.high)        
-        debug("    insertPoint.len:"  & $insertPoint.len)          
-      #else:
-      #  previous.add listItemVNode
-        #insertPoint[currentLevel].add previous
-
-      debug("HTML - LIST ITEM: item to insert:" & $previous)        
-      debug("HTML - LIST ITEM: insertPoint:" & $insertPoint.len)         
-      #echo previous
-      #echo "n: ", currentLevel + listItem.level
-      #echo insertPoint 
-      #insertPoint[currentLevel + listItem.level].add previous
-      insertPoint[listItem.level + listItem.listLevel].add previous
-      #echo currentLevel, " "
-      #if listItem.typ == listPreviousType:
-      #  insertPoint[currentLevel].add listItemVNode
+    #   # Gen node
+    #   var listItemVNode = list( listItem, attribs )
 
 
-      #echo previous
-      #echo insertPoint
-      #insertPoint[currentLevel].add previous
-      lastListLevel = listItem.listLevel
+    #   if listItem.listLevel > lastListLevel:
+    #     debug("listLevel change") 
+    #     var myUl = buildHtml(ul())
+    #     #myDiv.add myUl
+    #     if attribs != "":
+    #       myUl.setAttr("class", attribs)
+    #     previous.add myUl
+    #     myUl.add listItemVNode
+
+    #     if (insertPoint.len) <= listItem.level + 1:
+    #       insertPoint &= myUl
+    #       debug("inserting myUl")
+    #     else:
+    #       debug("replacing myUl")
+    #       debug("  insertPoint.len:" & $insertPoint.len)
+    #       debug("  listItem.level:" & $listItem.level)
+    #       insertPoint[listItem.level+1] = myUl
+    #       #debug("ok")
+
+    #     if (insertPoint.len) <= (listItem.level+2): 
+    #       debug("inserting LI")
+    #       insertPoint &= listItemVNode[0]
+    #     else:
+    #       debug("replacing LI")          
+    #       insertPoint[listItem.level+2] = listItemVNode[0]
+
+    #   elif previous == nil:
+    #     previous = listItemVNode
+
+    #   else:
+    #     debug("cleaning insertPoint")
+    #     debug("    insertPoint.len:"  & $insertPoint.len)
+    #     while insertPoint.high > (listItem.level+1):
+    #       insertPoint.delete(insertPoint.high)        
+    #     debug("    insertPoint.len:"  & $insertPoint.len)          
+    #   #else:
+    #   #  previous.add listItemVNode
+    #     #insertPoint[currentLevel].add previous
+
+    #   debug("HTML - LIST ITEM: item to insert:" & $previous)        
+    #   debug("HTML - LIST ITEM: insertPoint:" & $insertPoint.len)         
+    #   #echo previous
+    #   #echo "n: ", currentLevel + listItem.level
+    #   #echo insertPoint 
+    #   #insertPoint[currentLevel + listItem.level].add previous
+    #   insertPoint[listItem.level + listItem.listLevel].add previous
+    #   #echo currentLevel, " "
+    #   #if listItem.typ == listPreviousType:
+    #   #  insertPoint[currentLevel].add listItemVNode
+
+
+    #   #echo previous
+    #   #echo insertPoint
+    #   #insertPoint[currentLevel].add previous
+    #   lastListLevel = listItem.listLevel
 
 
 
-    # --------------- List Title ---------------
-    elif item.kind == itListTitle:
-      var it = doc.listTitles[item.n]
-      currentTitle = it.title
+    # # --------------- List Title ---------------
+    # elif item.kind == itListTitle:
+    #   var it = doc.listTitles[item.n]
+    #   currentTitle = it.title
 
 
-    elif item.kind == itAttributes:
-      currentAttribute = doc.attributes[item.n]
+    # elif item.kind == itAttributes:
+    #   currentAttribute = doc.attributes[item.n]
 
 
-    elif item.kind == itListSeparator:
-      listPreviousType = none
-      currentTitle = ""
-      currentAttribute.clear()
-      lastListLevel = -1
-      insertPoint = insertPoint[0..1]
-      currentLevel = insertPoint.len
-      isList = false
+    # elif item.kind == itListSeparator:
+    #   listPreviousType = none
+    #   currentTitle = ""
+    #   currentAttribute.clear()
+    #   lastListLevel = -1
+    #   insertPoint = insertPoint[0..1]
+    #   currentLevel = insertPoint.len
+    #   isList = false
 
-    # ---- Section ----
-    elif item.kind == itSection:
-      isList = false
-      #insertPoint[2] = insertPoint[0..0]
-      #currentLevel = 0
-      var sect = doc.sections[item.n] 
-      var (node,content) = section2html( sect )
-      insertPoint[contentLevel].add node
-      if sect.level == 2:
-        insertPoint[sect.level] = node # Replace the level 2 with this section
-        if insertPoint.len <= (sect.level + 1):
-          insertPoint &= content
-        else:
-          insertPoint[sect.level + 1] = content
-      currentLevel = sect.level
-      #insertPoint[currentLevel] = content
+    # # ---- Section ----
+    # elif item.kind == itSection:
+    #   isList = false
+    #   #insertPoint[2] = insertPoint[0..0]
+    #   #currentLevel = 0
+    #   var sect = doc.sections[item.n] 
+    #   var (node,content) = section2html( sect )
+    #   insertPoint[contentLevel].add node
+    #   if sect.level == 2:
+    #     insertPoint[sect.level] = node # Replace the level 2 with this section
+    #     if insertPoint.len <= (sect.level + 1):
+    #       insertPoint &= content
+    #     else:
+    #       insertPoint[sect.level + 1] = content
+    #   currentLevel = sect.level
+    #   #insertPoint[currentLevel] = content
     
-    elif item.kind == itBreak:
-      insertPoint[currentLevel].add break2html(doc.breaks[item.n])
+    # elif item.kind == itBreak:
+    #   insertPoint[currentLevel].add break2html(doc.breaks[item.n])
 
-    elif item.kind == itParagraph:
-      var tmp = paragraph( doc.paragraphs[item.n] )
-      insertPoint[currentLevel].add tmp
+    # elif item.kind == itParagraph:
+    #   var tmp = paragraph( doc.paragraphs[item.n] )
+    #   insertPoint[currentLevel].add tmp
     i += 1
    
 

@@ -13,6 +13,6 @@ proc main() =
   # echo "<<<<<<<<<<<--------------->>>>>>>>>>>>>>>>"
   var adocHtml = blocks.convertToHtml
   # #var txt:string = $adocHtml
-  # "ex01.html".writeFile( "<!DOCTYPE html>\n" & ($adocHtml).string )
+  "ex01.html".writeFile( "<!DOCTYPE html>\n" & ($adocHtml).string )
 
 main()

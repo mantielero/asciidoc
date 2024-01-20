@@ -189,19 +189,6 @@ proc preprocess(txt:var string; folder:string) =
           currentLevel = blockLevels[blockLevels.high]
           #blockLevels.delete(blockLevels.high)
 
-      # 5. Parse list title
-      if flag:
-        var listTitle:ListTitleObj
-        res = parserListTitle.match(txt, listTitle)
-        
-        if res.ok:
-          listTitle.level = currentLevel
-          blockLevels &= currentLevel
-          currentLevel += 1 # Increase the nesting
-          adoc.listTitles &= listTitle
-          adoc.items &= (itListTitle, adoc.listTitles.high)      
-          flag = false
-          txt =  txt[res.matchMax .. txt.high] 
 
       # 6. Parse attributes.
       if flag:
@@ -211,42 +198,6 @@ proc preprocess(txt:var string; folder:string) =
         if res.ok:
           adoc.attributes &= attr
           adoc.items &= (itAttributes, adoc.attributes.high)      
-          flag = false
-          txt =  txt[res.matchMax .. txt.high]  
-
-
-
-
-      # 7. Parse list.        
-      if flag:
-        var listItemTmp:ListItemTmpObj
-        res = parserListItem.match(txt, listItemTmp)
-
-        if res.ok:
-          var listItem:ListItemObj
-          listItem.txt = listItemTmp.txt
-          if listItemTmp.symbol in @["::",":::","::::",";;"]:
-            listItem.typ = listDescription
-            listItem.term = listItemTmp.term          
-          elif listItemTmp.symbol.contains("*") or listItemTmp.symbol.contains("-"):
-            listItem.typ = unordered
-            if not (listItemTmp.symbol in unorderedList):
-              unorderedList &= listItemTmp.symbol
-              listItem.listLevel = unorderedList.high
-              listItem.level = currentLevel
-              currentLevel += 1
-            else:
-              listItem.listLevel = unorderedList.find(listItemTmp.symbol)
-              listItem.level = currentLevel - (unorderedList.high - listItem.listLevel)  # FIXME
-
-            
-          elif listItemTmp.symbol.contains(".") or listItemTmp.symbol.contains("#"):
-            listItem.typ = ordered                    
-          
-
-
-          adoc.listItems &= listItem
-          adoc.items &= (itListItem, adoc.listItems.high)      
           flag = false
           txt =  txt[res.matchMax .. txt.high]  
 
@@ -344,6 +295,8 @@ proc pb(myBlock:Block) =
 
 
 proc restructure(blk:var Block; kind:BlckType = section) =
+  ## nesting sections (by default) and lists 
+  
   # Find max level
   var level = -1
   for b in blk.blocks:
@@ -352,9 +305,7 @@ proc restructure(blk:var Block; kind:BlckType = section) =
       if lvl > level:
         level = lvl
   
-  ## Gives a proper structure for sections
-  #var currentLevel = -1
-  #echo level
+  # Gives a proper parent-child structure for sections and lists
   var ids:seq[int]
   var deleteList:seq[int]
   var flag = true
@@ -364,8 +315,8 @@ proc restructure(blk:var Block; kind:BlckType = section) =
     for i in 0..blk.blocks.high:
       var idx = blk.blocks.high - i
       var b = blk.blocks[idx]
-      #echo idx, b.kind, "----"
-      if b.kind == kind: # a section
+
+      if b.kind == kind: # a section or a listItem
         var lvl = b.attributes[":level"].parseInt
         flag = true
 
@@ -399,34 +350,51 @@ proc restructure(blk:var Block; kind:BlckType = section) =
     level -= 1
     if level == 1:
       flag = false
-      
+
+
+proc listNesting(blk:var Block) =
+  ## nesting listItems 
+  ## FIXME: Literal Paragraph
+  var idx = blk.blocks.high
+  var lastTyp   = ""
+  var lastLevel = -1
+  while idx != 0:
+    var kind = blk.blocks[idx].kind 
+    if kind == listItem:
+      var itemTyp   = blk.blocks[idx].attributes[":listType"]
+      var itemLevel = blk.blocks[idx].attributes[":level"]
+      var idx2 = idx-1
+      while idx2 != 0:
+        if blk.blocks[idx2].kind == listItem: 
+          var prevTyp   =  blk.blocks[idx2].attributes[":listType"]
+          var prevLevel =  blk.blocks[idx2].attributes[":level"]      
+          if itemTyp != prevTyp:
+            blk.blocks[idx2].blocks.insert(blk.blocks[idx], 0) 
+            blk.blocks.delete(idx)
+            break
+          elif itemTyp == prevTyp:
+            if itemLevel > prevLevel:
+              blk.blocks[idx2].blocks.insert(blk.blocks[idx], 0) 
+              blk.blocks.delete(idx)
+              break
+        else:
+          break
+        idx2 -= 1
+               
+    idx -= 1
+
+
 
 proc restructureList(blk:Block) =
-  # Continuation Symbol
-  var deleteList:seq[int]
-  var flag = true
-  while flag:
-    flag = false
-    for i in 0..<blk.blocks.high:
-      if blk.blocks[i+1].kind == listContinuationSymbol:
-        blk.blocks[i].blocks &= blk.blocks[i+2]
-        deleteList &= i+2
-        deleteList &= i+1
-        flag = true
-
-        break
-    for i in deleteList:
-      blk.blocks.delete(i)
-    deleteList = @[]
-
-  # TODO: unordered list
-  # TODO: ordered list
-  # TODO: description list
+  # Calculates the level for the list
   var unorderedSymbols:seq[string]
-  var orderedSymbols:seq[string]  
+  var orderedSymbols:seq[string]
+  var dlistSymbols:seq[string]  
   for b in blk.blocks:
+    # Unordered/Ordered case
     if b.kind == listItem:
       var symbol = b.attributes[":symbol"]
+      # Unordered list
       if symbol.contains('*') or symbol.contains('-'):
         b.attributes[":listType"] = "unordered"
         if not (symbol in unorderedSymbols):
@@ -438,48 +406,92 @@ proc restructureList(blk:Block) =
             for i in (n+1)..unorderedSymbols.high:
               unorderedSymbols.delete(n+1)
           b.attributes[":level"] = $(n+1)
-
+      
+      # Ordered list
       elif symbol.contains('.') or symbol.contains('#'):
         b.attributes[":listType"] = "ordered"        
         if not (symbol in orderedSymbols):
           orderedSymbols &= symbol       
           b.attributes[":level"] = $(orderedSymbols.high + 1) 
         else:
-          b.attributes[":level"] = $(orderedSymbols.find(symbol) + 1) 
+          b.attributes[":level"] = $(orderedSymbols.find(symbol) + 1)
+
+    # Description list case
+    elif b.kind == listDescriptionItem:
+      var symbol = b.attributes[":symbol"]
+      b.attributes[":listType"] = "dlist"
+      if not (symbol in dlistSymbols):  # if symbol not in the list, we add it
+        dlistSymbols &= symbol      
+        b.attributes[":level"] = $(dlistSymbols.high + 1)
+      else:
+        var n = dlistSymbols.find(symbol)
+        # if we reduce the level, we "forget" the higher level symbols
+        if n < dlistSymbols.high and dlistSymbols.high > 1:
+          for i in (n+1)..dlistSymbols.high:
+            dlistSymbols.delete(n+1)
+        b.attributes[":level"] = $(n+1)
+      b.kind = listItem    
+
+    # restart the list if "listSeparator" found 
     elif b.kind == listSeparator:
       unorderedSymbols = @[]
-      orderedSymbols   = @[]     
+      orderedSymbols   = @[]  
+      dlistSymbols     = @[]   
 
-proc groupList(blk:Block) =
-  # Group in lists
+  # Continuation Symbol: if followed by continuation symbol (+)
+  # adds the next block as a child
+  var deleteList:seq[int]
   var flag = true
-  #var isList = false
+  while flag:
+    flag = false
+    for i in 0..<blk.blocks.high:
+      if blk.blocks[i+1].kind == listContinuationSymbol:
+        blk.blocks[i].blocks &= blk.blocks[i+2]
+        deleteList &= i+2
+        deleteList &= i+1
+        flag = true
+        break
+    for i in deleteList:
+      blk.blocks.delete(i)
+    deleteList = @[] 
+
+
+
+proc groupList(blk:Block) = 
+  # Convert listSeparators into "list"
   var idx = 0
   while idx < blk.blocks.high:
+    var b = blk.blocks[idx]
+    if b.kind == listSeparator:
+      b.kind = list
+    idx += 1
 
-    #for i in 0..blk.blocks.high:
+  # Group in lists
+  idx = 0
+  while idx < blk.blocks.high:
     var b = blk.blocks[idx]
 
     if b.kind in @[listTitle, list]:
       b.kind = list
       idx += 1
 
-      while blk.blocks[idx].kind == listItem:
+      # Put all the following listItem's into the list
+      while blk.blocks[idx].kind == listItem:# and idx < blk.blocks.high:
         b.blocks &= blk.blocks[idx]
-        echo idx, " ",blk.blocks.len
         blk.blocks.delete(idx)
-
-        #idx += 1
-
-    elif not (b.kind in @[listTitle, listItem]):
-      var b2:Block
-      new(b2)
-      b2.kind = list
-      blk.blocks.insert(b2, idx+1)
+        
+        if idx > blk.blocks.high: # end of blocks reached
+          break
+    
+    # elif not (b.kind in @[listTitle, listItem]):
+    #   var b2:Block
+    #   new(b2)
+    #   b2.kind = list
+    #   blk.blocks.insert(b2, idx+1)
       #if b2.kind == listItem and not isList:
-    idx += 1
+    #idx += 1
 
-
+ 
 
 # proc restructure2(blk:var Block) =
 #   # Find max level
@@ -553,15 +565,6 @@ proc groupList(blk:Block) =
     #if b.kind in @[listTitle, listItem, listContinuationSymbol
 
 
-#[
-    listItem
-    listSeparator
-    listContinuationSymbol
-    listTitle
-    listDescriptionItem
-    list
-]#
-
 proc parserBlks(txt:string):Block =
   var blkDoc:Block
   new(blkDoc)
@@ -571,13 +574,15 @@ proc parserBlks(txt:string):Block =
   var text = """
 .My title
 * List item
+  multilined
 ** Nested list item
 with multiline
 *** Deeper nested list item
     and another multiline example.
-* List item
+* List item 2
  ** Another nested list item
 * List item
+     another    multiline
 
 //
 
@@ -675,7 +680,8 @@ Cloud Providers::
   #   echo "BLOCK#",i
   #   echo blkDoc.blocks[i]
   blkDoc.restructureList
-  blkDoc.restructure(listItem)
+  #blkDoc.restructure(listItem)
+  blkDoc.listNesting
   #echo blkDoc
   blkDoc.groupList()
   blkDoc.restructure(section)
