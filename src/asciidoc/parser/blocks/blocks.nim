@@ -164,7 +164,7 @@ proc parserBlocksGen():auto =
               db.title = ""
               db.content = $1
               #if db.attributes == "":
-              #  db.kind = paragraph
+              db.kind = paragraph
                 
               db.done = true
               blk.blocks &= db.deepCopy

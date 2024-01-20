@@ -90,7 +90,13 @@ proc preprocess(txt:var string; folder:string) =
     txt = txt.replace(line, value)
   debug("asciidoc.nim - preprocess: leaving")
 
-
+proc postProcess(blk:Block) =
+  if blk.kind == BlckType.paragraph:
+    if blk.content.startsWith(" "):
+      blk.kind = BlckType.literal
+  if blk.blocks.len > 0:
+    for b in blk.blocks:
+      b.postProcess
 
 #[ proc parser(txt:var string):ADoc =
   debug("asciidoc.nim: entering parser")
@@ -380,7 +386,16 @@ proc listNesting(blk:var Block) =
         else:
           break
         idx2 -= 1
-               
+
+    # Automatic continuation for literal block
+    elif kind == literal:
+      var idx2 = idx-1
+      if blk.blocks[idx2].kind == listItem:
+        blk.blocks[idx2].blocks.insert(blk.blocks[idx], 0) 
+        blk.blocks.delete(idx)        
+
+
+
     idx -= 1
 
 
@@ -675,6 +690,7 @@ Cloud Providers::
 """ ]#
 
   var res = parserBlocks.match(text, blkDoc)
+  blkDoc.postProcess
   # for i in 0..blkDoc.blocks.high:
   #   echo "===================="
   #   echo "BLOCK#",i

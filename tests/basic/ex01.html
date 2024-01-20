@@ -422,21 +422,25 @@ div.page-break{display:block;-moz-column-break-after:page;break-after:page}
           </div>
           <div class="dlist"><dl>
               <dt class="hdlist1">First term</dt>
-              <dd><p>The description can be placed on the same line
-as the term.</p></dd>
+              <dd><p>The description can be placed on the same line as the term.</p></dd>
               <dt class="hdlist1">Second term</dt>
               <dd>
-                <p>Description of the second term.
-The description can also start on its own line.</p>
+                <p>Description of the second term. The description can also start on its own line.</p>
                 <div class="ulist"><ul>
                     <li>
                       <p>Every list item has at least one paragraph of content, which may be wrapped, even using a hanging indent.</p>
-                      <div class="dlist"><dl>
+                      <div class="dlist">
+                        <div class="paragraph"><p>Additional paragraphs or blocks are adjoined by putting a list continuation on a line adjacent to both blocks.</p></div>
+                        <dl>
                           <dt class="hdlist1">list continuation</dt>
                           <dd><p>a plus sign (`{plus}`) on a line by itself</p></dd>
-                        </dl></div>
+                        </dl>
+                      </div>
                     </li>
-                    <li><p>A literal paragraph does not require a list continuation.</p></li>
+                    <li>
+                      <p>A literal paragraph does not require a list continuation.</p>
+                      <div><div class="literalblock"><div class="content"><pre>$ cd projects&#x2F;my-book</pre></div></div></div>
+                    </li>
                   </ul></div>
               </dd>
             </dl></div>
