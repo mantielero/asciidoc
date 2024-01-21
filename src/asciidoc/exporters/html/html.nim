@@ -1,7 +1,7 @@
 #from htmlgen import nil
 #import asciidoc
 import karax / [karaxdsl, vdom, vstyles]
-import std/[strformat, tables, strutils, sequtils]
+import std/[strformat, tables, strutils, sequtils, times]
 import ../../[types, log]
 import stylesheet/[stylesheet]
 import header, paragraph, breaks, sections, list
@@ -253,13 +253,19 @@ proc convertToHtml*(doc:Block):VNode =
    
 
   # FOOTER
+  #var revNumber = "1.0" # FIXME
+  #echo ">>>", revNumber
   var footer  = buildHtml(tdiv(id="footer")):
                   tdiv(id="footer-text"):
+                    var updateTime = now().format("yyyy-MM-dd HH:mm:ss ZZZ")
                     if revNumber != "":
                       text "Version " & revNumber
                       br() 
-                      text "Last updated 2024-01-01\n"  
-  bodyArticle.add footer
+                      text &"Last updated {updateTime}\n" 
+                    else:
+                      text &"Last updated {updateTime}\n" 
+  
+  insertPoint[0].add footer
 
 
 

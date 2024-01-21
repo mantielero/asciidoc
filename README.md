@@ -109,7 +109,8 @@ $ tidy -i --indent-spaces 2  -quiet --tidy-mark no ex_01.html > ex01_new.html
   - [ ] Passthroughs
   - [ ] Reference
   - [ ] Document Types
-
+  - [X] Document footer - the info with thre revision and last update time
+ 
     - [-] article
     - [ ] book
     - [ ] manpage
