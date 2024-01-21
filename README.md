@@ -28,7 +28,7 @@ $ tidy -i --indent-spaces 2  -quiet --tidy-mark no ex_01.html > ex01_new.html
 
 # TODO
 ## Cli
-- [ ] CLI: not started
+- [X] CLI: started; just input/output
 
 ## Parsing
 - [ ] Parsing

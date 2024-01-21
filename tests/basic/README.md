@@ -1,3 +1,3 @@
 Just try:
 
-./asciidoc -a ex01.adoc -o salida.html
+../../bin/asciidoc -a ex01.adoc -o ex01.html

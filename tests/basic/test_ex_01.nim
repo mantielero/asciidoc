@@ -5,14 +5,14 @@
 import asciidoc
 
 proc main() =
-  var adocTxt = readFile("../examples/ex_01.adoc")
+  var adocTxt = readFile("ex02.adoc")
   var blocks = parseAdoc(adocTxt, "../examples/")
-  echo blocks
+  #echo blocks
   # var adocParsed = parseAdoc(adocTxt, "../examples/")
   # echo adocParsed
   # echo "<<<<<<<<<<<--------------->>>>>>>>>>>>>>>>"
   var adocHtml = blocks.convertToHtml
   # #var txt:string = $adocHtml
-  "ex01.html".writeFile( "<!DOCTYPE html>\n" & ($adocHtml).string )
+  "ex02.html".writeFile( "<!DOCTYPE html>\n" & ($adocHtml).string )
 
 main()

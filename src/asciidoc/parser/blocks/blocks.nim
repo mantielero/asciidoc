@@ -133,7 +133,17 @@ proc parserBlocksGen():auto =
 
             endListItem   <- adoc.crlf * (listBullet | adoc.crlf | adoc.listContinuationSymbol)
 
-            listItem      <- *adoc.emptyorcomment * ?listTitle * >listBullet * ' ' * >+(1-endListItem) * adoc.crlf:
+            id <- '#' * >+(1-'#'-'%'-'.'-','-']'):
+              db.attributes[":id"] = $1
+            role <- '.' * >+(1-'#'-'%'-'.'-','-']'):
+              db.attributes[$0] = ""
+            onlyKey <- ',' * >+(1 - ',' - '=' - ']'):
+              db.attributes[$1] = ""
+            keyValue <- ',' * >+(1 - ',' - '=' - ']') * '=' * >+(1 - ',' - '=' - ']'):
+              db.attributes[$1] = $2                         
+            attributes <- '[' * ?blockKind * ?id * *role * *(keyValue|onlyKey) * ']' * adoc.crlf
+
+            listItem      <- *adoc.emptyorcomment * ?listTitle * ?attributes  * >listBullet * ' ' * >+(1-endListItem) * adoc.crlf:
               db.attributes[":symbol"]  = $1
               db.content = $2
               db.kind = listItem

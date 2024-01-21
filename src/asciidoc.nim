@@ -464,6 +464,7 @@ proc parserBlks(txt:string):Block =
   blkDoc.postProcess
   blkDoc.restructureList
   blkDoc.listNesting
+  echo blkDoc
   blkDoc.groupList()
 
   blkDoc.restructure(section)
@@ -504,7 +505,7 @@ LEVELS:
 
 when isMainModule:
   import cligen/argcvt, cligen
-  proc parse(adocName:string = "../examples/ex_01.adoc";
+  proc asciidoc(adocName:string = "../examples/ex_01.adoc";
              outputName:string = "ex01.html") =
     var adocTxt = readFile(adocName)
     var blocks = parseAdoc(adocTxt, "../examples/")
@@ -512,4 +513,4 @@ when isMainModule:
 
     var adocHtml = blocks.convertToHtml
     outputName.writeFile( "<!DOCTYPE html>\n" & ($adocHtml).string )
-  dispatch parse
+  dispatch asciidoc
