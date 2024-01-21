@@ -75,11 +75,12 @@ $ tidy -i --indent-spaces 2  -quiet --tidy-mark no ex_01.html > ex01_new.html
 
   - [-] Lists
 
-    - [-] Unordered
-    - [-] Ordered
-    - [-] Description
+    - [X] Unordered
+    - [X] Ordered
+    - [X] Description
     - [X] Separating lists
-    - [ ] Complex List Items
+    - [X] Complex List Items
+    - [ ] Checked lists
 
   - [ ] Links
   - [ ] Cross References
@@ -109,7 +110,7 @@ $ tidy -i --indent-spaces 2  -quiet --tidy-mark no ex_01.html > ex01_new.html
   - [ ] Reference
   - [ ] Document Types
 
-    - [ ] article
+    - [-] article
     - [ ] book
     - [ ] manpage
     - [ ] inline
