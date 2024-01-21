@@ -9,7 +9,8 @@ grammar "adoc":
   value1    <- +(1 - '[' - ']' - '=' - ',' - '"')
   value2    <- '"' * +(1 - '"') * '"'
   txt       <- +(1 - '\r' - '\n')
-  listSeparator <- (emptyLine * comment * emptyLine)  
+  listSeparator <- (emptyLine * !"////" * comment * emptyLine)  
+  orderedList <- +'.' * ' '
 
   #crlf        <- ?'\r' * '\n' # 0 or 1 '\r'; then 1 '\n'
   #emptyLine   <- *' ' * crlf  # 0 or many spaces; then crlf

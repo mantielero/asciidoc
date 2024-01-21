@@ -465,6 +465,7 @@ proc parserBlks(txt:string):Block =
   blkDoc.restructureList
   blkDoc.listNesting
   echo blkDoc
+  echo "===================="
   blkDoc.groupList()
 
   blkDoc.restructure(section)

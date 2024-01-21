@@ -113,14 +113,16 @@ proc parserBlocksGen():auto =
               db.clear()  # Cleaning
               
             # ---- Lists ----
-            listTitle     <- '.' * >adoc.txt * adoc.crlf:
+            listTitle     <- !adoc.orderedList * '.' * >adoc.txt * adoc.crlf:
               db.kind = listTitle
               db.title = $1
               blk.blocks &= db.deepCopy
               db.clear()              
             listSeparator <- adoc.listSeparator:
               db.kind = listSeparator
+              db.title = ""
               blk.blocks &= db.deepCopy
+              echo db
               db.clear() 
             listBullet    <- *' ' * +('*'|'-'|'.'|'#')
 
@@ -128,8 +130,7 @@ proc parserBlocksGen():auto =
               # if ($1) == "+":
               db.kind = listContinuationSymbol
               blk.blocks &= db.deepCopy
-              db.clear()   
-              echo "LIST CONT SYMBOL"                          
+              db.clear()                             
 
             endListItem   <- adoc.crlf * (listBullet | adoc.crlf | adoc.listContinuationSymbol)
 
@@ -148,8 +149,7 @@ proc parserBlocksGen():auto =
               db.content = $2
               db.kind = listItem
               blk.blocks &= db.deepCopy
-              db.clear()   
-              echo "LIST ITEM"                 
+              db.clear()                    
 
             listDescriptionTerm   <- +(1 - ':' - ';' - '\r' - '\n') 
             listDescriptionSymbol <- ("::"|":::"|"::::"|";;")
@@ -165,7 +165,7 @@ proc parserBlocksGen():auto =
               db.content = tmp
               blk.blocks &= db.deepCopy
               db.clear()   
-              echo "LIST DESCRIPTION"
+              #echo "LIST DESCRIPTION"
             # ---- Indented Paragraph ---- 
             # TODO
 
