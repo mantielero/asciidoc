@@ -450,7 +450,8 @@ proc groupList(blk:Block) =
     #   blk.blocks.insert(b2, idx+1)
       #if b2.kind == listItem and not isList:
     #idx += 1
-
+    else:
+      idx += 1
  
 
 proc parserBlks(txt:string):Block =

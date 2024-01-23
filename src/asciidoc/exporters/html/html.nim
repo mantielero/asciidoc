@@ -7,6 +7,7 @@ import stylesheet/[stylesheet]
 import header, paragraph, breaks, sections, list
 
 
+
 proc convertToHtml*(doc:Block):VNode =
   debug("convertToHtml: starting")
   var description = ""
@@ -16,7 +17,9 @@ proc convertToHtml*(doc:Block):VNode =
 
   # Doc Header
   for item in doc.blocks:
+    echo item.kind
     if item.kind == documentHeader:
+      echo "--------------"
       # if "description" in doc.docheader[item.n].metadata:
       #   description = doc.docheader[item.n].metadata["description"]
       #   description = description.replace(" \\\n", " ")
@@ -58,12 +61,14 @@ proc convertToHtml*(doc:Block):VNode =
   # - Document Header
   #debug("HTML i: " & $i )
   #debug("HTML high: " & $doc.blocks.high )
+  #var revVersion = ""
   while i != doc.blocks.high:
     var item = doc.blocks[i]
     if item.kind == documentHeader:
-      # var tmp = header( doc.docheader[item.n] )
-      # revNumber = doc.docheader[item.n].revnumber
-      # bodyArticle.add tmp
+      var headerHtml = item.genHeader
+      bodyArticle.add headerHtml 
+      if ":revNumber" in item.attributes:
+        revNumber = item.attributes[":revNumber"]
       break
     i += 1
   result.add bodyArticle        # add the body to the HTML
@@ -129,104 +134,19 @@ proc convertToHtml*(doc:Block):VNode =
       var listRoot = genList(item)
       insertPoint[currentLevel].add listRoot
 
-    # if item.kind == listItem:
-    #   var listItem = doc.listItems[item.n]
 
-    #   # Attribs
-    #   var attribs = ""
-    #   if currentAttribute.keys.toSeq.len > 0:
-    #     for (key,value) in currentAttribute.pairs():
-    #       if value == "":
-    #         attribs &= " " & key
-
-    #     currentAttribute.clear()
-     
-    #   # add the class to the div
-    #   if previous != nil:
-    #     previous.setAttr("class", cls & attribs)
-
-    #   # Gen node
-    #   var listItemVNode = list( listItem, attribs )
-
-
-    #   if listItem.listLevel > lastListLevel:
-    #     debug("listLevel change") 
-    #     var myUl = buildHtml(ul())
-    #     #myDiv.add myUl
-    #     if attribs != "":
-    #       myUl.setAttr("class", attribs)
-    #     previous.add myUl
-    #     myUl.add listItemVNode
-
-    #     if (insertPoint.len) <= listItem.level + 1:
-    #       insertPoint &= myUl
-    #       debug("inserting myUl")
-    #     else:
-    #       debug("replacing myUl")
-    #       debug("  insertPoint.len:" & $insertPoint.len)
-    #       debug("  listItem.level:" & $listItem.level)
-    #       insertPoint[listItem.level+1] = myUl
-    #       #debug("ok")
-
-    #     if (insertPoint.len) <= (listItem.level+2): 
-    #       debug("inserting LI")
-    #       insertPoint &= listItemVNode[0]
-    #     else:
-    #       debug("replacing LI")          
-    #       insertPoint[listItem.level+2] = listItemVNode[0]
-
-    #   elif previous == nil:
-    #     previous = listItemVNode
-
-    #   else:
-    #     debug("cleaning insertPoint")
-    #     debug("    insertPoint.len:"  & $insertPoint.len)
-    #     while insertPoint.high > (listItem.level+1):
-    #       insertPoint.delete(insertPoint.high)        
-    #     debug("    insertPoint.len:"  & $insertPoint.len)          
-    #   #else:
-    #   #  previous.add listItemVNode
-    #     #insertPoint[currentLevel].add previous
-
-    #   debug("HTML - LIST ITEM: item to insert:" & $previous)        
-    #   debug("HTML - LIST ITEM: insertPoint:" & $insertPoint.len)         
-    #   #echo previous
-    #   #echo "n: ", currentLevel + listItem.level
-    #   #echo insertPoint 
-    #   #insertPoint[currentLevel + listItem.level].add previous
-    #   insertPoint[listItem.level + listItem.listLevel].add previous
-    #   #echo currentLevel, " "
-    #   #if listItem.typ == listPreviousType:
-    #   #  insertPoint[currentLevel].add listItemVNode
-
-
-    #   #echo previous
-    #   #echo insertPoint
-    #   #insertPoint[currentLevel].add previous
-    #   lastListLevel = listItem.listLevel
-
-
-
-    # # --------------- List Title ---------------
-    # elif item.kind == itListTitle:
-    #   var it = doc.listTitles[item.n]
-    #   currentTitle = it.title
-
-
-    # elif item.kind == itAttributes:
-    #   currentAttribute = doc.attributes[item.n]
-
-
-    # elif item.kind == itListSeparator:
-    #   listPreviousType = none
-    #   currentTitle = ""
-    #   currentAttribute.clear()
-    #   lastListLevel = -1
-    #   insertPoint = insertPoint[0..1]
-    #   currentLevel = insertPoint.len
-    #   isList = false
 
     # # ---- Section ----
+    elif item.kind == BlckType.paragraph:
+      debug("HTML: paragraph found")
+      var content = item.content.splitWhitespace.join(" ")
+      var para = buildHtml(p()):
+                    text content    
+      insertPoint[currentLevel].add para
+    
+    elif item.kind == BlckType.section:
+      debug("HTML: section found")  
+
     # elif item.kind == itSection:
     #   isList = false
     #   #insertPoint[2] = insertPoint[0..0]
@@ -249,12 +169,12 @@ proc convertToHtml*(doc:Block):VNode =
     # elif item.kind == itParagraph:
     #   var tmp = paragraph( doc.paragraphs[item.n] )
     #   insertPoint[currentLevel].add tmp
+    
+    
     i += 1
    
 
   # FOOTER
-  #var revNumber = "1.0" # FIXME
-  #echo ">>>", revNumber
   var footer  = buildHtml(tdiv(id="footer")):
                   tdiv(id="footer-text"):
                     var updateTime = now().format("yyyy-MM-dd HH:mm:ss ZZZ")

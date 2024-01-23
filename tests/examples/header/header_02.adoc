@@ -1,4 +1,4 @@
 = Document Title
-Author Name <author@email.org>; Author Name <author@email.org>
+Name Surname <author1@email.org>; John Smith <john@email.org>
 
 This document provides...

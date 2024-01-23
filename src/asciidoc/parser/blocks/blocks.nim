@@ -6,6 +6,7 @@ proc parserBlocksGen():auto =
   var db:Block
   new(db)
   db.done = false
+  var authorOrder = 1
 
   return  peg("blocks", blk: Block):
             # ---- Delimited Blocks ----: https://docs.asciidoctor.org/asciidoc/latest/blocks/delimited/
@@ -103,15 +104,68 @@ proc parserBlocksGen():auto =
 
             # ---- Doc Header ---
             titleDocHeader <- "= " * >adoc.txt * adoc.crlf:
-              db.title = $1
-            docheader <- *adoc.emptyorcomment * titleDocHeader * >*(1 - adoc.emptyLine):#adoc.crlf[2]):#>@adoc.crlf[2]:
+              db.title = ($1).strip
+            #docheader <- *adoc.emptyorcomment * titleDocHeader * >*(1 - adoc.emptyLine):#adoc.crlf[2]):#>@adoc.crlf[2]:
               #echo $1
-              db.content = $1
+              # db.content = $1
+              # db.done = true
+              # db.kind = documentHeader
+              # blk.blocks &= db.deepCopy
+              # db.clear()  # Cleaning
+
+            # Header
+            # title <- "= " * >txt * adoc.crlf:
+            #   item.level = 0
+            #   item.title = ($1).strip
+
+            # Author
+            authorName  <- +(1 - '<' - ';' - '\r' - '\n')
+            authorEmail <- '<' * +(1 - '<' - '>') * '>'
+            author <- >authorName * ?(>authorEmail) * ?';':
+              var name = ($1).strip
+              var email:string
+              if capture.len == 3:
+                email = ($2)[1 ..< ($2).high].strip       
+              db.attributes[":authorName" & $authorOrder] =  name
+              db.attributes[":authorEmail" & $authorOrder] =  email
+              authorOrder += 1
+              #item.authors &= AuthorObj( name: name, email: email )
+            
+            authors <- +author * *(1 - '\r' - '\n') * adoc.crlf
+
+            # Revision https://docs.asciidoctor.org/asciidoc/latest/document/revision-information/
+            revnumber <- >(Digit * *(Digit | '.')):
+              #item.
+              db.attributes[":revNumber"] = ($1).strip
+            revdate   <- >(+Digit * '-' * +Digit * '-' * +Digit):
+              db.attributes[":revDate"] = ($1).strip
+            revremark <- >(+(1 - '\n' - '\r')):
+              db.attributes[":revRemark"] = ($1).strip
+            revinfo <- ?'v' * revnumber * ?(',' * *Space * >revdate * ?(':' * *Space * >revremark)) * adoc.crlf
+
+              
+            # Attributes https://docs.asciidoctor.org/asciidoc/latest/document/metadata/
+            key       <- ':' * +(1 - ':' - '\n' - '\r' - ' ') * ':'
+            crlfcont <- (1 - ' ') * (1 - '\\') * ?'\r' * '\n'
+            value     <- @crlfcont
+            attribute <- >key * >(adoc.crlf | value): # a key with an optional value
+              var key = ($1)[1 ..< ($1).high]
+              var value = if capture.len == 3:
+                          ($2).strip()
+                          else:
+                            ""
+              db.attributes[key] = value
+            attributes <- *attribute
+
+            # Content
+            docheader <- *adoc.emptyorcomment * titleDocHeader * ?authors * ?revinfo * ?attributes * adoc.emptyLine:
+              # db.content = $1
               db.done = true
               db.kind = documentHeader
               blk.blocks &= db.deepCopy
-              db.clear()  # Cleaning
-              
+              db.clear()  # Cleaning              
+
+
             # ---- Lists ----
             listTitle     <- !adoc.orderedList * '.' * >adoc.txt * adoc.crlf:
               db.kind = listTitle
