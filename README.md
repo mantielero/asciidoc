@@ -27,15 +27,20 @@ $ tidy -i --indent-spaces 2  -quiet --tidy-mark no ex_01.html > ex01_new.html
 ```
 
 # TODO
+## Short term
+- [ ] Blocks structure not working well with `section_01.adoc`
+
 ## Cli
 - [X] CLI: started; just input/output
 
 ## Parsing
 - [ ] Parsing
   
-  - [ ] Document Header
+  - [X] Document Header
 
-  - [ ] Paragraphs
+    - [ ] Preamble
+
+  - [-] Paragraphs
 
     - [ ] Hard line breaks
     - [ ] Preamble and lead style
@@ -81,6 +86,7 @@ $ tidy -i --indent-spaces 2  -quiet --tidy-mark no ex_01.html > ex01_new.html
     - [X] Separating lists
     - [X] Complex List Items
     - [ ] Checked lists
+    - [ ] Attributes (ex. `square`)
 
   - [ ] Links
   - [ ] Cross References

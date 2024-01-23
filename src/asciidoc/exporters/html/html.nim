@@ -8,6 +8,110 @@ import header, paragraph, breaks, sections, list
 
 
 
+proc traverseDocument(insertPoint:var seq[VNode]; doc:Block; currentLevel:int = 1) =
+  var i = 0
+  var isPreamble = false
+  var newLevel = currentLevel
+  while i <= doc.blocks.high:
+    var item = doc.blocks[i]
+
+    # Optional: any content prior to first section is a preamble.
+    if item.kind != section and isPreamble:
+      debug("HTML - PREAMBLE: Creating preamble")
+      # Create preamble.
+      var preamble = buildHtml(tdiv(id="preamble"))
+      var sectionBody = buildHtml(tdiv(class="sectionbody"))
+      preamble.add sectionBody
+      insertPoint[currentLevel].add preamble
+      insertPoint &= sectionBody # Current level 2
+      newLevel += 1
+      isPreamble = false
+      debug("HTML - PREAMBLE: insertPoint: " & $insertPoint)
+
+    # -------------- ListItem ------------------
+    if item.kind == BlckType.list:
+      debug("HTML: list found") # & $insertPoint)
+      #debug(item)
+      # 1. Create the root node
+      var listRoot = genList(item)
+      insertPoint[newLevel].add listRoot
+
+
+
+    # # ---- Section ----
+    elif item.kind == BlckType.paragraph:
+      debug("HTML: paragraph found")
+      var content = item.content.splitWhitespace.join(" ")
+      var para = buildHtml(p()):
+                    text content    
+      insertPoint[newLevel].add para
+    
+    elif item.kind == BlckType.section:
+      debug("HTML: section found")
+      var level = item.attributes[":level"].parseInt
+      var tmp = buildHtml(tdiv(class="sect" & $(level-1))):
+                  case level
+                  of 1:
+                    h1()
+                  of 2:
+                    h2()
+                  of 3:
+                    h3()
+                  of 4:
+                    h4()
+                  of 5:
+                    h5()                                                                        
+                  else:
+                    h6()
+      var title = buildHtml(text item.title)
+      tmp[0].add title
+      if level == 2:
+        var content = buildHtml(tdiv(class="sectionbody"))
+        tmp.add content
+        insertPoint &= content
+      else:
+        insertPoint &= tmp
+
+      insertPoint[newLevel].add tmp
+
+      newLevel += 1
+
+      #<div class="sectionbody">
+      insertPoint.traverseDocument(item, newLevel)
+
+      #[
+      
+#   var content = buildHtml(tdiv(class="sectionbody"))
+#   tmp.add content
+#   return (tmp,content)
+      ]#
+
+
+    # elif item.kind == itSection:
+    #   isList = false
+    #   #insertPoint[2] = insertPoint[0..0]
+    #   #currentLevel = 0
+    #   var sect = doc.sections[item.n] 
+    #   var (node,content) = section2html( sect )
+    #   insertPoint[contentLevel].add node
+    
+    #   if sect.level == 2:
+    #     insertPoint[sect.level] = node # Replace the level 2 with this section
+    #     if insertPoint.len <= (sect.level + 1):
+    #       insertPoint &= content
+    #     else:
+    #       insertPoint[sect.level + 1] = content
+    #   currentLevel = sect.level
+    #   #insertPoint[currentLevel] = content
+    
+    # elif item.kind == itBreak:
+    #   insertPoint[currentLevel].add break2html(doc.breaks[item.n])
+
+    
+    i += 1
+     
+
+
 proc convertToHtml*(doc:Block):VNode =
   debug("convertToHtml: starting")
   var description = ""
@@ -16,21 +120,9 @@ proc convertToHtml*(doc:Block):VNode =
   var revNumber = ""
 
   # Doc Header
-  for item in doc.blocks:
-    echo item.kind
-    if item.kind == documentHeader:
-      echo "--------------"
-      # if "description" in doc.docheader[item.n].metadata:
-      #   description = doc.docheader[item.n].metadata["description"]
-      #   description = description.replace(" \\\n", " ")
-      #   for a in doc.docheader[item.n].authors:
-      #     author &= a.name
-      #     author &= ", "
-      #   if author.endsWith(", ") and author.len > 2:
-      #     author = author[0..(author.high - 2)]
-
-      #   title = doc.docheader[item.n].title
-      break
+  # for item in doc.blocks:
+  #   if item.kind == documentHeader:
+  #     break
   
   var i = 0  # Tracks current item in the document.
   result = buildHtml(html):
@@ -103,76 +195,16 @@ proc convertToHtml*(doc:Block):VNode =
 
   var isPreamble = true
 
-  var isList = false
-  var listPreviousType:ListItemType
-  var currentTitle = ""
-  var currentAttribute:AttributesObj
-  var lastListLevel:int = -1
+  #var isList = false
+  #var listPreviousType:ListItemType
+  #var currentTitle = ""
+  #var currentAttribute:AttributesObj
+  #var lastListLevel:int = -1
   #debug("HTML i: " & $i )
   #debug("HTML high: " & $doc.blocks.high )
-  while i <= doc.blocks.high:
-    var item = doc.blocks[i]
 
-    # Optional: any content prior to first section is a preamble.
-    if item.kind != section and isPreamble:
-      debug("HTML - PREAMBLE: Creating preamble")
-      # Create preamble.
-      var preamble = buildHtml(tdiv(id="preamble"))
-      var sectionBody = buildHtml(tdiv(class="sectionbody"))
-      preamble.add sectionBody
-      insertPoint[currentLevel].add preamble
-      insertPoint &= sectionBody # Current level 2
-      currentLevel += 1
-      isPreamble = false
-      debug("HTML - PREAMBLE: insertPoint: " & $insertPoint)
-
-    # -------------- ListItem ------------------
-    if item.kind == BlckType.list:
-      debug("HTML: list found") # & $insertPoint)
-      #debug(item)
-      # 1. Create the root node
-      var listRoot = genList(item)
-      insertPoint[currentLevel].add listRoot
-
-
-
-    # # ---- Section ----
-    elif item.kind == BlckType.paragraph:
-      debug("HTML: paragraph found")
-      var content = item.content.splitWhitespace.join(" ")
-      var para = buildHtml(p()):
-                    text content    
-      insertPoint[currentLevel].add para
-    
-    elif item.kind == BlckType.section:
-      debug("HTML: section found")  
-
-    # elif item.kind == itSection:
-    #   isList = false
-    #   #insertPoint[2] = insertPoint[0..0]
-    #   #currentLevel = 0
-    #   var sect = doc.sections[item.n] 
-    #   var (node,content) = section2html( sect )
-    #   insertPoint[contentLevel].add node
-    #   if sect.level == 2:
-    #     insertPoint[sect.level] = node # Replace the level 2 with this section
-    #     if insertPoint.len <= (sect.level + 1):
-    #       insertPoint &= content
-    #     else:
-    #       insertPoint[sect.level + 1] = content
-    #   currentLevel = sect.level
-    #   #insertPoint[currentLevel] = content
-    
-    # elif item.kind == itBreak:
-    #   insertPoint[currentLevel].add break2html(doc.breaks[item.n])
-
-    # elif item.kind == itParagraph:
-    #   var tmp = paragraph( doc.paragraphs[item.n] )
-    #   insertPoint[currentLevel].add tmp
-    
-    
-    i += 1
-   
+  #>>>>>>>>>>>>>>>>>>>>>>>>>>><
+  insertPoint.traverseDocument(doc, currentLevel)
 
   # FOOTER
   var footer  = buildHtml(tdiv(id="footer")):
