@@ -245,7 +245,7 @@ proc pb(myBlock:Block) =
     #     var res = parserBlocks.match( txt, b)
 
 
-proc restructure(blk:var Block; kind:BlckType = section) =
+proc restructure2(blk:var Block; kind:BlckType = section) =
   ## nesting sections (by default) and lists 
   
   # Find max level
@@ -301,6 +301,138 @@ proc restructure(blk:var Block; kind:BlckType = section) =
     level -= 1
     if level == 1:
       flag = false
+
+
+proc reorderDocumentHeader(blk:var Block) =
+  var n = blk.blocks.high
+  var tmp:seq[Block] = @[]
+  while n >= 0:
+    var b = blk.blocks[n]
+    if b.kind != documentHeader:
+      tmp.insert(b,0)
+    else:
+      b.blocks &= tmp
+      for i in (n+1)..blk.blocks.high:
+        blk.blocks.delete(n+1)
+      tmp = @[]
+    n -= 1
+
+proc reorderSectionContent(blk:var Block) =
+  var n = blk.blocks.high
+  var m = n
+  var tmp:seq[Block] = @[]
+
+  while n >= 0:
+    var b = blk.blocks[n]
+    if b.blocks.len > 0: # go deeper
+      b.reorderSectionContent
+
+    if b.kind != section:
+      tmp.insert(b,0)
+    else:
+      b.blocks &= tmp
+      for i in (n+1)..m:
+        blk.blocks.delete(n+1)
+      m = n - 1
+      tmp = @[]
+    n -= 1
+
+
+proc nestingSections(blk:var Block) =
+  var n = blk.blocks.high
+  var m = n
+  var tmp:seq[Block] = @[]
+  var lastLevel = -1
+
+  while n >= 0:
+    var b = blk.blocks[n]
+    if b.blocks.len > 0: # go deeper
+      b.nestingSections
+
+    if b.kind == section:
+      var lvl = b.attributes[":level"].parseInt
+      if lvl > lastLevel:
+        tmp = @[b]
+        lastLevel = lvl
+        m = n
+      
+      elif lvl == lastLevel:
+        tmp.insert(b,0)
+        lastLevel = lvl
+      
+      elif lvl < lastLevel:
+        b.blocks &= tmp
+        for i in (n+1)..m:
+          blk.blocks.delete(n+1)
+        m = n
+        tmp = @[b]
+        lastLevel = lvl
+
+    n -= 1
+
+proc restructure(blk:var Block; kind:BlckType = section) =
+  ## nesting sections (by default) and lists 
+  
+  # Process documentHeader
+  blk.reorderDocumentHeader
+  blk.reorderSectionContent
+  blk.nestingSections
+  echo blk
+
+  # Find max level
+  var level = -1
+  for b in blk.blocks:
+    if b.kind == kind:
+      var lvl = b.attributes[":level"].parseInt 
+      if lvl > level:
+        level = lvl
+  
+  # Gives a proper parent-child structure for sections and lists
+  var ids:seq[int]
+  var deleteList:seq[int]
+  var flag = true
+  while flag:
+    flag = false # we will stop when no more sections found
+    # Check all blocks from end to start
+    for i in 0..blk.blocks.high:
+      var idx = blk.blocks.high - i
+      var b = blk.blocks[idx]
+
+      if b.kind == kind: # a section or a listItem
+        var lvl = b.attributes[":level"].parseInt
+        flag = true
+
+        # There are children
+        if ids.len > 0:        
+          for j in 0..ids.high:
+            var n = ids.high - j
+            b.blocks &= blk.blocks[ids[n]]
+          
+          deleteList &= ids
+          ids = @[]
+
+        # If no children:
+        elif lvl == level:
+          ids &= idx
+        elif lvl < level:
+          ids = @[]
+        
+      else: # Not a section
+        if kind == listItem and b.kind == listSeparator:
+          ids = @[]
+        else:
+          ids &= idx
+
+    for j in deleteList:
+      blk.blocks.delete(j)
+    deleteList = @[]
+
+    ids = @[]      
+    #  echo ids
+    level -= 1
+    if level == 1:
+      flag = false
+
 
 
 proc listNesting(blk:var Block) =
@@ -463,14 +595,19 @@ proc parserBlks(txt:string):Block =
 
   var res = parserBlocks.match(txt, blkDoc)
   blkDoc.postProcess
+  # Lists processing
   blkDoc.restructureList
   blkDoc.listNesting
-  echo blkDoc
-  echo "===================="
   blkDoc.groupList()
+  #echo blkDoc
+  #echo "===================="
 
-  blkDoc.restructure(section)
-
+  # Section processing
+  blkDoc.reorderDocumentHeader
+  blkDoc.reorderSectionContent
+  blkDoc.nestingSections  
+  #blkDoc.restructure(section)
+  echo blkDoc
   return blkDoc
 
 
@@ -511,7 +648,7 @@ when isMainModule:
              outputName:string = "ex01.html") =
     var adocTxt = readFile(adocName)
     var blocks = parseAdoc(adocTxt, "../examples/")
-    echo blocks
+    #echo blocks
 
     var adocHtml = blocks.convertToHtml
     outputName.writeFile( "<!DOCTYPE html>\n" & ($adocHtml).string )

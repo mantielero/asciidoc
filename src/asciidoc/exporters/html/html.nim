@@ -13,10 +13,21 @@ proc traverseDocument(insertPoint:var seq[VNode]; doc:Block; currentLevel:int = 
   var isPreamble = false
   var newLevel = currentLevel
   while i <= doc.blocks.high:
-    var item = doc.blocks[i]
 
+    var item = doc.blocks[i]
+    echo ";;;;;"
+    echo item
     # Optional: any content prior to first section is a preamble.
-    if item.kind != section and isPreamble:
+    if item.kind == documentHeader:
+      var headerHtml = item.genHeader
+      insertPoint[currentLevel].add headerHtml 
+      insertPoint &= headerHtml
+      newLevel += 1
+      insertPoint.traverseDocument(item, newLevel)
+      #if ":revNumber" in item.attributes:
+      #  revNumber = item.attributes[":revNumber"]
+
+    elif item.kind != section and isPreamble:
       debug("HTML - PREAMBLE: Creating preamble")
       # Create preamble.
       var preamble = buildHtml(tdiv(id="preamble"))
@@ -77,6 +88,7 @@ proc traverseDocument(insertPoint:var seq[VNode]; doc:Block; currentLevel:int = 
       newLevel += 1
 
       #<div class="sectionbody">
+      echo "============================"
       insertPoint.traverseDocument(item, newLevel)
 
       #[
@@ -156,6 +168,8 @@ proc convertToHtml*(doc:Block):VNode =
   #var revVersion = ""
   while i != doc.blocks.high:
     var item = doc.blocks[i]
+
+    # Document Header
     if item.kind == documentHeader:
       var headerHtml = item.genHeader
       bodyArticle.add headerHtml 
