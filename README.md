@@ -96,7 +96,7 @@ $ tidy -i --indent-spaces 2  -quiet --tidy-mark no ex_01.html > ex01_new.html
   - [ ] Icons
   - [ ] Keyboard macro
   - [ ] Button and Menu UI Macros
-  - [ ] Admonitions
+  - [X] Admonitions
   - [ ] Sidebars
   - [ ] Example blocks
   - [ ] Blockquotes
