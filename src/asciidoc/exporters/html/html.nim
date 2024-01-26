@@ -46,15 +46,15 @@ proc traverseDocument(insertPoint:var seq[VNode]; doc:Block; currentLevel:int = 
       insertPoint[newLevel].add listRoot
 
 
-
-
     elif item.kind == BlckType.paragraph:
       debug("HTML: paragraph found")
       var content = item.content.splitWhitespace.join(" ")
-      var para = buildHtml(p()):
+      var para = buildHtml(tdiv(class="paragraph")):
+                  p:
                     text content    
       insertPoint[newLevel].add para
     
+
     elif item.kind == BlckType.admonition:
       debug("HTML: admonition found")
       var content = item.content.splitWhitespace.join(" ")
