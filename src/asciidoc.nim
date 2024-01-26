@@ -30,6 +30,7 @@ proc `in`(val:string; values:seq[tuple[symbol:string;level:int]]):bool =
       return true
   return false
 
+proc parserBlks(txt:string):Block
 
 proc preprocess(txt:var string; folder:string) =
   debug("asciidoc.nim - preprocess: entering")
@@ -92,12 +93,55 @@ proc preprocess(txt:var string; folder:string) =
 
 proc postProcess(blk:Block) =
   if blk.kind == BlckType.paragraph:
+    # Case: literal
     if blk.content.startsWith(" "):
       blk.kind = BlckType.literal
+    
+    # Case: admonition
+    var tmp = blk.content.split(":",1)[0]
+    if tmp in @["NOTE", "IMPORTANT", "TIP", "CAUTION", "WARNING"]:
+    #elif blk.content.startsWith("NOTE: "):
+      blk.kind = BlckType.admonition
+      blk.content = blk.content.split(": ", 1)[1]
+      blk.attributes[":admonition"] = tmp
+
+    # Case: admonition block
+  if blk.kind == BlckType.example:
+    var typ = ""
+    for i in blk.attributes.keys():
+      if i in @["NOTE", "IMPORTANT", "TIP", "CAUTION", "WARNING"]:
+        typ = i
+    if typ != "":
+      blk.kind = admonition
+      blk.attributes.del(typ)
+      blk.attributes[":admonition"] = typ
+      
+      #blk.content.preprocess(folder)
+      var tmp =  blk.content.parserBlks()
+      blk.blocks = tmp.blocks
+      blk.content = ""
+
+
+    
   if blk.blocks.len > 0:
     for b in blk.blocks:
       b.postProcess
 
+#[
+NOTE: An admonition draws the reader's attention to auxiliary information.
+
+Here are the other built-in admonition types:
+
+IMPORTANT: Don't forget the children!
+
+TIP: Look for the warp zone under the bridge.
+
+CAUTION: Slippery when wet.
+
+WARNING: The software you're about to use is untested.
+
+IMPORTANT: Sign off before stepping away from your computer.
+]#
 #[ proc parser(txt:var string):ADoc =
   debug("asciidoc.nim: entering parser")
   # 1. Parse Doc Header  
@@ -152,18 +196,6 @@ proc postProcess(blk:Block) =
           flag = false
           txt =  txt[res.matchMax .. txt.high]  
 
-
-      # 8. Parse section
-      if flag:
-        var sect:SectionObj
-        res = parserSection.match(txt, sect)
-        if res.ok:
-          adoc.sections &= sect
-          adoc.items &= (itSection, adoc.sections.high)      
-          flag = false
-          txt =  txt[res.matchMax .. txt.high]  
-
-
       # 9. Break
       if flag:
         var b:BreakObj
@@ -173,24 +205,6 @@ proc postProcess(blk:Block) =
           adoc.items &= (itBreak, adoc.breaks.high)      
           flag = false
           txt =  txt[res.matchMax .. txt.high]  
-
-      # 10. Paragraph
-      if flag:
-        var para:ParagraphObj
-        res = parserParagraph.match(txt, para)
-        if res.ok:
-          #echo list
-          para.level = currentLevel
-          adoc.paragraphs &= para
-          adoc.items &= (itParagraph, adoc.paragraphs.high)      
-          flag = false
-          # if para.lines[0].contains("First paragraph"):
-          #   echo "FROM|" & txt & "|"
-
-          #txt =  txt[res.matchMax .. txt.high]  
-          txt =  txt[res.matchLen .. txt.high] 
-          # if para.lines[0].contains("First paragraph"):
-          #   echo "  TO|" & txt & "|"  
 
       if flag:
         res = parserCommentOrEmpty.match(txt)  
@@ -370,68 +384,68 @@ proc nestingSections(blk:var Block) =
 
     n -= 1
 
-proc restructure(blk:var Block; kind:BlckType = section) =
-  ## nesting sections (by default) and lists 
+# proc restructure(blk:var Block; kind:BlckType = section) =
+#   ## nesting sections (by default) and lists 
   
-  # Process documentHeader
-  blk.reorderDocumentHeader
-  blk.reorderSectionContent
-  blk.nestingSections
-  echo blk
+#   # Process documentHeader
+#   blk.reorderDocumentHeader
+#   blk.reorderSectionContent
+#   blk.nestingSections
+#   echo blk
 
-  # Find max level
-  var level = -1
-  for b in blk.blocks:
-    if b.kind == kind:
-      var lvl = b.attributes[":level"].parseInt 
-      if lvl > level:
-        level = lvl
+#   # Find max level
+#   var level = -1
+#   for b in blk.blocks:
+#     if b.kind == kind:
+#       var lvl = b.attributes[":level"].parseInt 
+#       if lvl > level:
+#         level = lvl
   
-  # Gives a proper parent-child structure for sections and lists
-  var ids:seq[int]
-  var deleteList:seq[int]
-  var flag = true
-  while flag:
-    flag = false # we will stop when no more sections found
-    # Check all blocks from end to start
-    for i in 0..blk.blocks.high:
-      var idx = blk.blocks.high - i
-      var b = blk.blocks[idx]
+#   # Gives a proper parent-child structure for sections and lists
+#   var ids:seq[int]
+#   var deleteList:seq[int]
+#   var flag = true
+#   while flag:
+#     flag = false # we will stop when no more sections found
+#     # Check all blocks from end to start
+#     for i in 0..blk.blocks.high:
+#       var idx = blk.blocks.high - i
+#       var b = blk.blocks[idx]
 
-      if b.kind == kind: # a section or a listItem
-        var lvl = b.attributes[":level"].parseInt
-        flag = true
+#       if b.kind == kind: # a section or a listItem
+#         var lvl = b.attributes[":level"].parseInt
+#         flag = true
 
-        # There are children
-        if ids.len > 0:        
-          for j in 0..ids.high:
-            var n = ids.high - j
-            b.blocks &= blk.blocks[ids[n]]
+#         # There are children
+#         if ids.len > 0:        
+#           for j in 0..ids.high:
+#             var n = ids.high - j
+#             b.blocks &= blk.blocks[ids[n]]
           
-          deleteList &= ids
-          ids = @[]
+#           deleteList &= ids
+#           ids = @[]
 
-        # If no children:
-        elif lvl == level:
-          ids &= idx
-        elif lvl < level:
-          ids = @[]
+#         # If no children:
+#         elif lvl == level:
+#           ids &= idx
+#         elif lvl < level:
+#           ids = @[]
         
-      else: # Not a section
-        if kind == listItem and b.kind == listSeparator:
-          ids = @[]
-        else:
-          ids &= idx
+#       else: # Not a section
+#         if kind == listItem and b.kind == listSeparator:
+#           ids = @[]
+#         else:
+#           ids &= idx
 
-    for j in deleteList:
-      blk.blocks.delete(j)
-    deleteList = @[]
+#     for j in deleteList:
+#       blk.blocks.delete(j)
+#     deleteList = @[]
 
-    ids = @[]      
-    #  echo ids
-    level -= 1
-    if level == 1:
-      flag = false
+#     ids = @[]      
+#     #  echo ids
+#     level -= 1
+#     if level == 1:
+#       flag = false
 
 
 
@@ -599,19 +613,13 @@ proc parserBlks(txt:string):Block =
   blkDoc.restructureList
   blkDoc.listNesting
   blkDoc.groupList()
-  #echo blkDoc
-  #echo "===================="
 
   # Section processing
   blkDoc.reorderDocumentHeader
   blkDoc.reorderSectionContent
   blkDoc.nestingSections  
-  #blkDoc.restructure(section)
-  echo blkDoc
+
   return blkDoc
-
-
-
 
 
 proc parseAdoc*(txt:var string; folder: string = ""):Block = # ADoc =
@@ -620,13 +628,7 @@ proc parseAdoc*(txt:var string; folder: string = ""):Block = # ADoc =
   # https://docs.asciidoctor.org/asciidoc/latest/directives/include/#include-processing
   #var lines = txt.splitLines
   txt.preprocess(folder)
-
-
   var blk =  txt.parserBlks()
-  #echo blk
-  #echo repr blk
-
-  
   return blk
 
 

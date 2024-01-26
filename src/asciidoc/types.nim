@@ -216,6 +216,7 @@ type
     document
     documentHeader
     paragraph
+    admonition
     # blocks
     source
     stem

@@ -13,17 +13,15 @@ proc traverseDocument(insertPoint:var seq[VNode]; doc:Block; currentLevel:int = 
   var isPreamble = false
   var newLevel = currentLevel
   while i <= doc.blocks.high:
-
     var item = doc.blocks[i]
-    echo ";;;;;"
-    echo item
+
     # Optional: any content prior to first section is a preamble.
     if item.kind == documentHeader:
       var headerHtml = item.genHeader
       insertPoint[currentLevel].add headerHtml 
       insertPoint &= headerHtml
       newLevel += 1
-      insertPoint.traverseDocument(item, newLevel)
+      #insertPoint.traverseDocument(item, newLevel)
       #if ":revNumber" in item.attributes:
       #  revNumber = item.attributes[":revNumber"]
 
@@ -40,7 +38,7 @@ proc traverseDocument(insertPoint:var seq[VNode]; doc:Block; currentLevel:int = 
       debug("HTML - PREAMBLE: insertPoint: " & $insertPoint)
 
     # -------------- ListItem ------------------
-    if item.kind == BlckType.list:
+    elif item.kind == BlckType.list:
       debug("HTML: list found") # & $insertPoint)
       #debug(item)
       # 1. Create the root node
@@ -49,7 +47,7 @@ proc traverseDocument(insertPoint:var seq[VNode]; doc:Block; currentLevel:int = 
 
 
 
-    # # ---- Section ----
+
     elif item.kind == BlckType.paragraph:
       debug("HTML: paragraph found")
       var content = item.content.splitWhitespace.join(" ")
@@ -57,6 +55,40 @@ proc traverseDocument(insertPoint:var seq[VNode]; doc:Block; currentLevel:int = 
                     text content    
       insertPoint[newLevel].add para
     
+    elif item.kind == BlckType.admonition:
+      debug("HTML: admonition found")
+      var content = item.content.splitWhitespace.join(" ")
+      var admoType = item.attributes[":admonition"]
+      var admoClass = &"admonitionblock {admoType.toLowerAscii}"
+      var d = buildHtml(tdiv(class=admoClass))
+      var tbl:VNode
+      var flag = false
+      if item.content != "":
+        tbl = buildHtml(table()):
+                tr:
+                  td(class="icon"):
+                    tdiv(class="title"):
+                      text admoType.capitalizeAscii
+                  td(class="content"):
+                    text content
+      else:
+        tbl = buildHtml(table()):
+                tr()
+        var tmp = buildHtml(td(class="icon")):
+                    tdiv(class="title"):
+                      text admoType.capitalizeAscii
+        tbl.add tmp
+        var ctn = buildHtml(td(class="content"))
+        tbl.add ctn
+        insertPoint &= ctn
+        flag = true
+
+      d.add tbl
+      insertPoint[newLevel].add d
+      if flag:
+        newLevel += 1
+
+    # ---- Section ----    
     elif item.kind == BlckType.section:
       debug("HTML: section found")
       var level = item.attributes[":level"].parseInt
@@ -88,15 +120,10 @@ proc traverseDocument(insertPoint:var seq[VNode]; doc:Block; currentLevel:int = 
       newLevel += 1
 
       #<div class="sectionbody">
-      echo "============================"
-      insertPoint.traverseDocument(item, newLevel)
+      #echo "============================"
+    insertPoint.traverseDocument(item, newLevel)
 
-      #[
-      
-#   var content = buildHtml(tdiv(class="sectionbody"))
-#   tmp.add content
-#   return (tmp,content)
-      ]#
+
 
 
     # elif item.kind == itSection:
